@@ -19,10 +19,11 @@ LinearHybridModel(predictors::AbstractArray{Symbol}, forcing::AbstractArray{Symb
     - nn_chain :: DenseNN, a Dense neural network
 """
 function LinearHybridModel(predictors::AbstractArray{Symbol}, forcing::AbstractArray{Symbol},
-    out_dim::Int, neurons::Int, nn_chain; b=[1.5f0])
+    out_dim::Int, neurons::Int; b=[1.5f0])
 
     in_dim = length(predictors)
-    ch = nn_chain(in_dim, out_dim, neurons)
+    #ch = nn_chain(in_dim, out_dim, neurons)
+    ch = Chain(Dense(in_dim, neurons), Dense(neurons, out_dim))
     LinearHybridModel(ch, predictors, forcing, b)
 end
 
