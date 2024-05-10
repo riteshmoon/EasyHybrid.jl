@@ -6,6 +6,7 @@ version = "1.0.0-DEV"
 [deps]
 AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
