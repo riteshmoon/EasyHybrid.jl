@@ -1,6 +1,7 @@
+export gen_linear_data, gen_linear_data_2outputs
 ## Create some data y = a ⋅ x1 + b, where a = f(x2,x3), b=2
 # init dummy data
-function gen_dk(; seed=123)
+function gen_linear_data(; seed=123)
     Random.seed!(seed)
     df = DataFrame(rand(Float32, 1000, 3), :auto)
     # more variables
@@ -14,7 +15,7 @@ function gen_dk(; seed=123)
     return to_keyedArray(df)
 end
 
-function gen_dk_2outputs(; seed=123)
+function gen_linear_data_2outputs(; seed=123)
     Random.seed!(seed)
     df = @chain DataFrame(rand(Float32, 1000, 3), :auto) begin
         @transform :seqID = @bycol repeat(1:100, inner=10)
