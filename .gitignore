@@ -1,3 +1,4 @@
 *_tmp
 tmp_*
 /Manifest.toml
+.vscode

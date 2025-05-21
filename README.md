@@ -1,6 +1,7 @@
 # EasyHybrid
 
-## *|> |> |> Work in progress |> |> |> Work in progress |> |> |> Work in progress |> |> |> Work in progress |> |> |>*
+> [!CAUTION]
+> Work in progress
 
 
 ## Hybrid modelling for teaching purposes
@@ -9,6 +10,6 @@ The idea of this repo to provide a relatively simple approach for hybrid modelli
 
 ## Start using it
 
-```
+```julia
 using EasyHybrid
 ```
