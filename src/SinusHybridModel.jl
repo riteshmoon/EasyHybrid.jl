@@ -39,4 +39,4 @@ function (lhm::SinusHybridModel)(dk, infer::Symbol)
 end
 
 # Call @functor to allow for training the custom model
-Flux.@functor SinusHybridModel
+Flux.@layer SinusHybridModel

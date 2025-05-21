@@ -99,4 +99,4 @@ function (m::FluxPartModel_NEE_ET2)(dk, infer::Symbol)
 end
 
 # Call @functor to allow for training the custom model
-Flux.@functor FluxPartModel_NEE_ET2
+Flux.@layer FluxPartModel_NEE_ET2

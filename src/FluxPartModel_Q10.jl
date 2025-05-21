@@ -58,4 +58,4 @@ function (m::FluxPartModel_Q10)(dk, infer::Symbol)
 end
 
 # Call @functor to allow for training the custom model
-Flux.@functor FluxPartModel_Q10
+Flux.@layer FluxPartModel_Q10
