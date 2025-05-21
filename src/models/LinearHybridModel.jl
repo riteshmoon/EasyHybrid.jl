@@ -47,5 +47,5 @@ end
 function (lhm::LinearHybridModel)(df, infer::Symbol)
     return lhm(df, Val(infer))
 end
-# Call @functor to allow for training the custom model
+# Call @layer to allow for training the custom model
 Flux.@layer LinearHybridModel
