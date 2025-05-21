@@ -6,10 +6,8 @@ using DataFrameMacros
 using Flux
 using Random
 
-include("synthetic_test_data.jl")
-
-dk = gen_dk()
-dk_twos = gen_dk_2outputs()
+dk = gen_linear_data()
+dk_twos = gen_linear_data_2outputs()
 #lhm_twos = LinearHybridModel_2outputs([:x2, :x3], [:x1, :x2], 1, 5, DenseNN; b=[4.0f0])
 #out_twos = lhm_twos(dk_twos, :infer)
 
