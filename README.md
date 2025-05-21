@@ -1,4 +1,8 @@
 # EasyHybrid
+[![CI](https://github.com/HybridModelling/EasyHybrid/actions/workflows/CI.yml/badge.svg)](https://github.com/HybridModelling/EasyHybrid/actions/workflows/CI.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/HybridModelling/EasyHybrid/blob/main/LICENSE)
+
+
 
 > [!CAUTION]
 > Work in progress
