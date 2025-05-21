@@ -14,9 +14,8 @@ end
 
 """
 LinearHybridModel(predictors::AbstractArray{Symbol}, forcing::AbstractArray{Symbol},
-    `out_dim`, neurons, `nn_chain`; b=[1.5f0])
+    out_dim::Int, neurons::Int; b=[1.5f0])
 
-    - nn_chain :: DenseNN, a Dense neural network
 """
 function LinearHybridModel(predictors::AbstractArray{Symbol}, forcing::AbstractArray{Symbol},
     out_dim::Int, neurons::Int; b=[1.5f0])

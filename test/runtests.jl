@@ -13,7 +13,7 @@ dk_twos = gen_linear_data_2outputs()
 
 @testset "EasyHybrid.jl" begin
     # test model instantiation
-    lhm = LinearHybridModel([:x2, :x3], [:x1], 1, 5, DenseNN; b=[2.0f0])
+    lhm = LinearHybridModel([:x2, :x3], [:x1], 1, 5; b=[2.0f0])
     @test lhm.forcing == [:x1]
     @test lhm.b == [2.0f0]
     @test lhm.predictors == [:x2, :x3]
