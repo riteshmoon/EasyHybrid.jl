@@ -18,11 +18,13 @@ function train(hybridModel, data; nepochs=200, batchsize=10, opt=Adam(0.01))
     prog = Progress(nepochs, desc="Training")
     train_history = [l_init_train]
     val_history = [l_init_val]
+    β_history = [copy(ps.β[1])]
     for epoch in 1:nepochs
         for (x, y) in train_loader
             grads = Zygote.gradient((ps) -> lossfn(hybridModel, x, y, ps, st), ps)[1]
             Optimisers.update!(opt_state, ps, grads)
         end
+        push!(β_history, copy(ps.β[1]))
         l_train = lossfn(hybridModel, x_train, y_train, ps, st)
         l_val = lossfn(hybridModel, x_val, y_val, ps, st)
         push!(train_history, l_train)
@@ -31,5 +33,5 @@ function train(hybridModel, data; nepochs=200, batchsize=10, opt=Adam(0.01))
     end
     ŷ_train, αst_train = hybridModel(x_train, ps, st)
     ŷ_val, αst_val = hybridModel(x_val, ps, st)
-    return (; train_history, val_history, ŷ_train, αst_train, ŷ_val, αst_val, y_train, y_val, opt_state)
+    return (; train_history, val_history, ŷ_train, αst_train, ŷ_val, αst_val, y_train, y_val, β_history)
 end

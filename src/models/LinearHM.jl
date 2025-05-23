@@ -17,13 +17,15 @@ struct LinearHM{D, T1, T2, T3} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predi
 end
 
 # ? β is a parameter
-LuxCore.initialparameters(::AbstractRNG, layer::LinearHM) = (β = layer.β,)
-LuxCore.initialstates(::AbstractRNG, layer::LinearHM) = NamedTuple()
+function LuxCore.initialparameters(::AbstractRNG, layer::LinearHM)
+    ps, _ = LuxCore.setup(Random.default_rng(), layer.NN)
+    return (; ps, β = layer.β,)
+end
 
-# function LuxCore.setup(rng::Random.AbstractRNG, lhm::LinearHM)
-#     ps, st = LuxCore.setup(rng, lhm.NN)
-#     return (ps, st)
-# end
+function LuxCore.initialstates(::AbstractRNG, layer::LinearHM)
+    _, st = LuxCore.setup(Random.default_rng(), layer.NN)
+    return (; st)
+end
 
 """
     LinearHM(NN, predictors, forcing, β)(ds_k)
@@ -59,9 +61,8 @@ ŷ, αst = LuxCore.apply(lh_model, ds_k, ps, st)
 function (lhm::LinearHM)(ds_k, ps, st::NamedTuple)
     p = ds_k(lhm.predictors)
     x = ds_k(lhm.forcing)
-    α, st = LuxCore.apply(lhm.NN, p, ps, st)
-    ŷ = α .* x .+ lhm.β
+    α, st = LuxCore.apply(lhm.NN, p, ps.ps, st.st)
+    ŷ = α .* x .+ ps.β
 
     return ŷ, (; α, st)
 end
-
