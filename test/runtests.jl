@@ -11,6 +11,15 @@ dk_twos = gen_linear_data_2outputs()
 #lhm_twos = LinearHybridModel_2outputs([:x2, :x3], [:x1, :x2], 1, 5, DenseNN; b=[4.0f0])
 #out_twos = lhm_twos(dk_twos, :infer)
 
+@testset "LinearHM" begin
+    # test model instantiation
+    NN = Lux.Chain(Dense(2, 5), Dense(5, 1))
+    lhm = LinearHM(NN, (:x2, :x3), (:x1,), 1.5f0)
+    @test lhm.forcing == [:x1]
+    @test lhm.β == [1.5f0]
+    @test lhm.predictors == [:x2, :x3]
+end
+
 @testset "EasyHybrid.jl" begin
     # test model instantiation
     lhm = LinearHybridModel([:x2, :x3], [:x1], 1, 5; b=[2.0f0])

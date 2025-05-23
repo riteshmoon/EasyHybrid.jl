@@ -1,19 +1,46 @@
 using EasyHybrid
+using Lux
+using Optimisers
+using GLMakie
+using Random
+using LuxCore
 
-df = gen_linear_data(; seed=123)
+ds_k = gen_linear_data(; seed=123)
+yobs =  ds_k(:obs)'[:,:]
 
-## Instantiate model
+NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
+lhm = LinearHM(NN, (:x1, :x2), (:x3,), 1.5f0)
 
-hModel = LinearHybridModel([:x2, :x3], [:x1], 1, 5, b=[0.0f0])
+ps_nn, st_nn = LuxCore.setup(Random.default_rng(), NN)
 
-# Fit the model with the non-stateful function fit_df! to the first half of the data set
-# One does not need to put predictors explicitly, if they are explicit in the model
+ps, st = LuxCore.setup(Random.default_rng(), lhm)
 
-# res = fit_df!(hModel, df[1:500,:], [:obs], Flux.mse, n_epoch=500, batchsize=100, opt=Adam(0.01), parameters2record=[:b], latents2record=[:pred => :obs, :a => "a_syn"], patience=300, stateful=false);
+opt_state = Optimisers.setup(opt, ps)
 
+out = train(lhm, (ds_k([:x1, :x2, :x3]), yobs); nepochs=100, batchsize=100, opt=Adam(0.01))
 
-##
-# test_df = df[501:1000, :]
+# with_theme(theme_light()) do 
+#     fig = Figure(; size = (1200, 300))
+#     ax = Axis(fig[1,1], title = "Loss",
+#         yscale=log10, xscale=log10
+#         )
+#     lines!(ax, out.train_history, color=:orangered, label = "train")
+#     lines!(ax, out.val_history, color=:dodgerblue, label ="validation")
+#     limits!(ax, 1, 1000, 0.04, 1)
+#     axislegend()
+#     fig
+# end
 
-### Make a direct evaluation
-# fig2=evalfit(res, test_df)
+with_theme(theme_light()) do 
+    fig = Figure(; size = (1200, 600))
+    ax_train = Axis(fig[1, 1], title = "training")
+    ax_val = Axis(fig[2, 1], title = "validation")
+    lines!(ax_train, out.ŷ_train[:], color=:orangered, label = "prediction")
+    lines!(ax_train, out.y_train[:], color=:dodgerblue, label ="observation")
+    # validation
+    lines!(ax_val, out.ŷ_val[:], color=:orangered, label = "prediction")
+    lines!(ax_val, out.y_val[:], color=:dodgerblue, label ="observation")
+    axislegend(; position=:lt)
+    Label(fig[0,1], "Observations vs predictions", tellwidth=false)
+    fig
+end

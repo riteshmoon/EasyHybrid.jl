@@ -28,7 +28,7 @@ end
 
 
 function (lhm::LinearHybridModel)(dk, ::Val{:infer})
-    #dk = permutedims(dk, (1,3,2))
+    #dk = permutedims(dk, (1,3,2))x
     x_matrix = select_predictors(dk, lhm.predictors)
     a = lhm.DenseLayers(x_matrix)
     x = select_variable(dk, lhm.forcing[1])

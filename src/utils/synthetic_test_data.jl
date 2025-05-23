@@ -8,7 +8,7 @@ function gen_linear_data(; seed=123)
     df = @chain df begin
         @transform :a_syn = exp(-5.0f0((:x2 - 0.7f0))^2.0f0) + :x3 / 10.0f0
         @aside b = 2.0f0
-        @transform :obs = :a_syn * :x1 + b
+        @transform :obs = :a_syn * :x1 + b + 0.1f0*rand(Float32)
         @transform :pred_syn = :obs
         @transform :seqID = @bycol repeat(1:100, inner=10)
     end
