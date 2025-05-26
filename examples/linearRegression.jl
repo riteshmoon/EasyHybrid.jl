@@ -15,7 +15,7 @@ lhm = LinearHM(NN, (:x1, :x2), (:x3,), 0.0f0)
 ps, st = LuxCore.setup(Random.default_rng(), lhm)
 # opt_state = Optimisers.setup(Adam(), ps)
 
-out = train(lhm, (ds_k([:x1, :x2, :x3]), yobs); nepochs=10_000, batchsize=100, opt=Adam(0.01));
+out = train(lhm, (ds_k([:x1, :x2, :x3]), yobs), (:β, ); nepochs=10_000, batchsize=100, opt=Adam(0.01));
 
 with_theme(theme_light()) do 
     fig = Figure(; size = (1200, 300))
@@ -44,7 +44,7 @@ with_theme(theme_light()) do
 end
 
 with_theme(theme_light()) do 
-    fig, ax, plt = lines(out.β_history, color=:grey15;
+    fig, ax, plt = lines(out.ps_history, color=:grey15;
         axis = (xscale = log10, yscale=log10), label = "β",
         figure = (; size = (800, 400)))
     ylims!(ax, 0.07, 2.5)

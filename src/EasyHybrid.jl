@@ -14,6 +14,7 @@ using Zygote
 using Statistics
 using ProgressMeter
 using Random
+using NaNStatistics: nanmean
 
 include("utils/tools.jl")
 include("models/models.jl")

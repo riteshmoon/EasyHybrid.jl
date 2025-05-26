@@ -16,7 +16,7 @@ struct LinearHM{D, T1, T2, T3} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predi
     end
 end
 
-# ? β is a parameter
+# ? β is a parameter, so expand the initialparameters!
 function LuxCore.initialparameters(::AbstractRNG, layer::LinearHM)
     ps, _ = LuxCore.setup(Random.default_rng(), layer.NN)
     return (; ps, β = layer.β,)
