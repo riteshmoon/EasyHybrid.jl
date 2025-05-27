@@ -11,18 +11,16 @@ using EasyHybrid.MLUtils
 df = CSV.read("/Users/lalonso/Documents/HybridML/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
 
 df[!, :Temp] = df[!, :Temp] .- 273.15 # convert to Celsius
-df_forcing = filter(:Respiration_heterotrophic => !isnan, df)
-# df_forcing = df
+#df_forcing = filter(:Respiration_heterotrophic => !isnan, df)
+df_forcing = df
 ds_k = to_keyedArray(Float32.(df_forcing))
 yobs =  ds_k(:Respiration_heterotrophic)'[:,:]
 
+
 NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
-
 RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Temp,), 1.0f0)
-# ps, st = LuxCore.setup(Random.default_rng(), RbQ10);
-# lossfn(RbQ10, ds_k([:Rgpot, :Moist, :Temp]), yobs, ps, st)
 
-out = train(RbQ10, (ds_k([:Rgpot, :Moist, :Temp]), yobs), (:Q10, ); nepochs=1_000, batchsize=1024, opt=Adam(0.01));
+out = train(RbQ10, (ds_k([:Rgpot, :Moist, :Temp]), yobs), (:Q10, ); nepochs=1000, batchsize=512, opt=Adam(0.01));
 
 
 with_theme(theme_light()) do 

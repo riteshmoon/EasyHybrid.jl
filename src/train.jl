@@ -12,8 +12,10 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     opt_state = Optimisers.setup(opt, ps)
 
     # ? initial losses
-    l_init_train = lossfn(hybridModel, x_train, y_train, ps, st)
-    l_init_val = lossfn(hybridModel, x_val, y_val, ps, st)
+    is_no_nan_t = .!isnan.(y_train)[1, :]
+    is_no_nan_v = .!isnan.(y_val)[1, :]
+    l_init_train = lossfn(hybridModel, x_train, (y_train, is_no_nan_t), ps, st)
+    l_init_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st)
 
     prog = Progress(nepochs, desc="Training")
     train_history = [l_init_train]
@@ -22,13 +24,18 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     for epoch in 1:nepochs
         for (x, y) in train_loader
             # ? check NaN indices before going forward, and pass filtered `x, y`.
-            grads = Zygote.gradient((ps) -> lossfn(hybridModel, x, y, ps, st), ps)[1]
-            Optimisers.update!(opt_state, ps, grads)
+            is_no_nan = .!isnan.(y)[1, :]
+            if length(is_no_nan)>0
+                grads = Zygote.gradient((ps) -> lossfn(hybridModel, x, (y, is_no_nan), ps, st), ps)[1]
+                Optimisers.update!(opt_state, ps, grads)
+            end
         end
         tmp_e = [copy(getproperty(ps, e)[1]) for e in save_ps]
         push!(ps_history, tmp_e...)
-        l_train = lossfn(hybridModel, x_train, y_train, ps, st)
-        l_val = lossfn(hybridModel, x_val, y_val, ps, st)
+
+        l_train = lossfn(hybridModel, x_train,  (y_train, is_no_nan_t), ps, st)
+        l_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st)
+
         push!(train_history, l_train)
         push!(val_history, l_val)
         next!(prog; showvalues = [("epoch", epoch), ("Initial_loss", l_init_train), ("Current_loss", l_train), ("Validation_loss", l_val)])
