@@ -4,6 +4,7 @@ using Chain: @chain
 using DataFrames
 using DataFrameMacros
 using Flux
+using Lux
 using Random
 
 dk = gen_linear_data()
