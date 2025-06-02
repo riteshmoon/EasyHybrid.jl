@@ -38,7 +38,9 @@ ŷ (respiration rate) is computed as a function of the neural network output `R
 function (hm::RespirationRbQ10)(ds_k, ps, st::NamedTuple)
     p = ds_k(hm.predictors)
     x = ds_k(hm.forcing)
+    
     Rb, st = LuxCore.apply(hm.NN, p, ps.ps, st.st) #! NN(αᵢ(t)) ≡ Rb(T(t), M(t))
+
     ŷ = Rb .* ps.Q10 .^(0.1f0 * (x .- 15.0f0)) # ? should 15°C be the reference temperature also an input variable?
 
     return ŷ, (; Rb, st)

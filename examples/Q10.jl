@@ -11,14 +11,17 @@ using EasyHybrid.MLUtils
 df = CSV.read("/Users/lalonso/Documents/HybridML/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
 
 df[!, :Temp] = df[!, :Temp] .- 273.15 # convert to Celsius
-#df_forcing = filter(:Respiration_heterotrophic => !isnan, df)
+df_forcing = filter(:Respiration_heterotrophic => !isnan, df)
 df_forcing = df
 ds_k = to_keyedArray(Float32.(df_forcing))
 yobs =  ds_k(:Respiration_heterotrophic)'[:,:]
 
-
 NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
-RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Temp,), 1.0f0)
+#? do different initial Q10s
+RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Temp,), 2.5f0) 
+
+# ? play with :Temp as predictors in NN, temperature sensitivity!
+# TODO: variance effect due to LSTM vs NN
 
 out = train(RbQ10, (ds_k([:Rgpot, :Moist, :Temp]), yobs), (:Q10, ); nepochs=1000, batchsize=512, opt=Adam(0.01));
 
@@ -73,3 +76,8 @@ with_theme(theme_light()) do
     Label(fig[0,1], "Observations vs predictions", tellwidth=false)
     fig
 end
+
+
+# ? Rb
+lines(out.αst_train.Rb[:])
+lines!(ds_k(:Moist)[:])
