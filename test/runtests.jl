@@ -14,7 +14,7 @@ dk_twos = gen_linear_data_2outputs()
 
 @testset "LinearHM" begin
     # test model instantiation
-    NN = Lux.Chain(Dense(2, 5), Dense(5, 1))
+    NN = Lux.Chain(Lux.Dense(2, 5), Lux.Dense(5, 1))
     lhm = LinearHM(NN, (:x2, :x3), (:x1,), 1.5f0)
     @test lhm.forcing == [:x1]
     @test lhm.β == [1.5f0]
