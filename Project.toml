@@ -1,6 +1,6 @@
 name = "EasyHybrid"
 uuid = "61bb816a-e6af-4913-ab9e-91bff2e122e3"
-authors = ["MR"]
+authors = ["Lazaro Alonso", "Markus Reichstein"]
 version = "0.1.0"
 
 [deps]
@@ -25,8 +25,12 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 AxisKeys = "0.2"
+Chain = "0.6"
 ChainRulesCore = "1.25.1"
 DataFrames = "1"
+DataFrameMacros = "0.4"
+DimensionalData = "0.29"
+Flux = "0.16"
 ForwardDiff = "1.0.1"
 Lux = "1.12.4"
 LuxCore = "1.2.4"
