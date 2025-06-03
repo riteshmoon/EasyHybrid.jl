@@ -30,22 +30,22 @@ end
 """
     BulkDensitySOC(NN, predictors, oBD)(ds_k)
 
-# Hybrid model for bulk density based on the Federer (1993) paper http://dx.doi.org/10.1139/x93-131 plus SOC concnetration, density and coarse fraction
+# Hybrid model for bulk density based on the Federer (1993) paper http://dx.doi.org/10.1139/x93-131 plus SOC concentrations, density and coarse fraction
 """
-function (hm::BulkDensitySOC)(ds_k, ps, st::NamedTuple)
-    p = ds_k(hm.predictors)
+function (hm::BulkDensitySOC)(ds_p, ps, st::NamedTuple)
+    p = ds_p(hm.predictors)
     
     out, st = LuxCore.apply(hm.NN, p, ps.ps, st.st)
 
-    SOCconc = out[1] #TODO has to be a ratio 
-    CF = out[2]
-    mBD = out[3] # mineral bulk density
+    SOCconc = out[1, :] #TODO has to be a ratio 
+    CF = out[2, :]
+    mBD = out[3, :] # mineral bulk density
 
-    oF = SOCconc * 1.724 #TODO has to be a ratio
+    oF = SOCconc .* 1.724 #TODO has to be a ratio
 
-    BD = ps.oBD * mBD / (oF * mBD .+ (1.0f0 - oF) * ps.oBD)
+    BD = @. ps.oBD * mBD / (oF * mBD + (1.0f0 - oF) * ps.oBD)
     
-    SOCdensity = SOCconc * BD * (1 .- CF)
+    SOCdensity = @. SOCconc * BD * (1 - CF)
 
     return (; SOCconc, CF, BD, SOCdensity), (; mBD, st)
 end
