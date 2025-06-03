@@ -55,6 +55,7 @@ opt_prob = OptimizationProblem(opt_func, ps_ca, dataloader)
 
 epochs = 25
 res_adam = solve(opt_prob, Optimisers.Adam(0.001); callback, epochs)
+
 # res_shopia = solve(opt_prob, Optimization.Sophia(); callback, maxiters=epochs)
 
 # ! finetune a bit with L-BFGS
