@@ -8,43 +8,41 @@ using LuxCore
 using CSV, DataFrames
 using EasyHybrid.MLUtils
 
-# # data
-df_o = CSV.read(joinpath(@__DIR__, "lucas_overlaid.csv"), DataFrame, normalizenames=true)
+# ? move the `csv` file into the `BulkDSOC/data` folder (create folder)
+df_o = CSV.read(joinpath(@__DIR__, "./data/lucas_overlaid.csv"), DataFrame, normalizenames=true)
 
-# df[!, :Temp] = df[!, :Temp] .- 273.15 # convert to Celsius
-# df_forcing = filter(:Respiration_heterotrophic => !isnan, df)
-# df_forcing = df
-names(df_o)
-# df_o = dropmissing(df_o)
-_names_cov = Symbol.(names(df_o)[end-40:end])
-df = df_o[:, [:bulk_density_fe, :soc, :coarse_vol, _names_cov...]]
 
+names_cov = Symbol.(names(df_o)[end-40:end])
+df = df_o[:, [:bulk_density_fe, :soc, :coarse_vol, names_cov...]]
+
+# ? match target_names
 rename!(df, :bulk_density_fe => :BD, :soc => :SOCconc, :coarse_vol => :CF) # rename as in hybrid model
-df[!,:SOCdensity] = df.BD .* df.SOCconc .* (1 .- df.CF) # calculate SOC density #TODO check units
+
+# ? calculate SOC density
+df[!,:SOCdensity] = df.BD .* df.SOCconc .* (1 .- df.CF) # TODO: check units
 target_names = [:BD, :SOCconc, :CF, :SOCdensity]
 
 df_d = dropmissing(df)
+df_d[:, Not(target_names)]
 
-#df_nan = replace(x -> ismissing(x) ? NaN : x, df)
-ds_k = to_keyedArray(df_d);
-yobs =  ds_k(target_names)'[:,:]
+ds_p = to_keyedArray(df_d[:, Not(target_names)])
+
+ds_t =  ds_p(target_names)
 
 NN = Lux.Chain(Dense(41, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 3))
 
 # #? do different initial Q10s
-hmsss = BulkDensitySOC(NN, _names_cov, target_names, 2.5f0) 
+BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 2.5f0)
 
-
-
-# # ? play with :Temp as predictors in NN, temperature sensitivity!
-# # TODO: variance effect due to LSTM vs NN
 
 ps, st = LuxCore.setup(Random.default_rng(), hmsss)
 ls = lossfn(hmsss, ds_k, ps, st) # #TODO runs up to here
 
 out = train(hmsss, ds_k, (:oBD, ); nepochs=1000, batchsize=512, opt=Adam(0.01))
 
-out
+# ? analysis
+
+
 
 # with_theme(theme_light()) do 
 #     fig, ax, plt = lines(out.ps_history, color=:grey15;
