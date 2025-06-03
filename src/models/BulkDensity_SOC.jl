@@ -2,16 +2,17 @@
 export BulkDensitySOC
 
 """
-    BulkDensitySOC(NN, predictors, oBD)
+    BulkDensitySOC(NN, predictors, targets, oBD)
 
 A hybrid model with a neural network `NN`, `predictors` and one global parameter oBD.
 """
-struct BulkDensitySOC{D, T1, T2} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :oBD)}
+struct BulkDensitySOC{D, T1, T2, T3} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :targets, :oBD)}
     NN
-    predictors
+    predictors # names of predictors
+    targets # names of targets
     oBD # organic matter bulk density
-    function BulkDensitySOC(NN::D, predictors::T1, oBD::T2) where {D, T1, T2}
-        new{D, T1, T2}(NN, collect(predictors), [oBD])
+    function BulkDensitySOC(NN::D, predictors::T1, targets::T2, oBD::T3) where {D, T1, T2, T3}
+        new{D, T1, T2, T3}(NN, collect(predictors), collect(targets), [oBD])
     end
 end
 
