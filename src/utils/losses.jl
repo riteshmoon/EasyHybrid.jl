@@ -20,3 +20,14 @@ function lossfn(HM::RespirationRbQ10, ds, (y, no_nan), ps, st)
     loss = mean((y[no_nan] .- ŷ[no_nan]).^2)
     return loss
 end
+
+"""
+    lossfn(HM::RespirationRbQ10, ds, y, ps, st)
+"""
+function lossfn(HM::BulkDensitySOC, ds, (y, no_nan), ps, st)
+    ŷ, αst = HM(ds, ps, st)
+    _, st = αst
+    # loss = mean((y[no_nan] .- ŷ[no_nan]).^2)
+    l1 = mean((y(:soc) .- ŷ.SOCconc).^2)
+    return loss
+end

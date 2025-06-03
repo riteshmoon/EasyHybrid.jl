@@ -6,7 +6,7 @@ export BulkDensitySOC
 
 A hybrid model with a neural network `NN`, `predictors` and one global parameter oBD.
 """
-struct BulkDensitySOC{D, T1, T2} <: LuxCore.AbstractLuxContainerLayer{(:NN, :SOC_CF_predictors, :BD_predictors, :oBD)}
+struct BulkDensitySOC{D, T1, T2} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :oBD)}
     NN
     predictors
     oBD # organic matter bulk density
@@ -42,9 +42,9 @@ function (hm::BulkDensitySOC)(ds_k, ps, st::NamedTuple)
 
     oF = SOCconc * 1.724 #TODO has to be a ratio
 
-    BD = ps.oBD * mBD / (oF * mBD + (1.0f0 - oF) * ps.oBD)
+    BD = ps.oBD * mBD / (oF * mBD .+ (1.0f0 - oF) * ps.oBD)
     
-    SOCdensity = SOCconc * BD * (1 - CF)
+    SOCdensity = SOCconc * BD * (1 .- CF)
 
     return (; SOCconc, CF, BD, SOCdensity), (; mBD, st)
 end
