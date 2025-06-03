@@ -2,17 +2,18 @@
 export RespirationRbQ10
 
 """
-    RespirationRbQ10(NN, predictors, forcing, Q10)
+    RespirationRbQ10(NN, predictors, forcing, targets, Q10)
 
-A linear hybrid model with a neural network `NN`, `predictors` and `forcing` terms.
+A linear hybrid model with a neural network `NN`, `predictors`, `targets` and `forcing` terms.
 """
-struct RespirationRbQ10{D, T1, T2, T3} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :forcing, :Q10)}
+struct RespirationRbQ10{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :forcing, :targets, :Q10)}
     NN
     predictors
     forcing
+    targets
     Q10
-    function RespirationRbQ10(NN::D, predictors::T1, forcing::T2, Q10::T3) where {D, T1, T2, T3}
-        new{D, T1, T2, T3}(NN, collect(predictors), collect(forcing), [Q10])
+    function RespirationRbQ10(NN::D, predictors::T1, forcing::T2, targets::T3, Q10::T4) where {D, T1, T2, T3, T4}
+        new{D, T1, T2, T3, T4}(NN, collect(predictors), collect(targets), collect(forcing), [Q10])
     end
 end
 
@@ -28,7 +29,7 @@ function LuxCore.initialstates(::AbstractRNG, layer::RespirationRbQ10)
 end
 
 """
-    RespirationRbQ10(NN, predictors, forcing, Q10)(ds_k)
+    RespirationRbQ10(NN, predictors, forcing, targets, Q10)(ds_k)
 
 # Model definition `ŷ = Rb(αᵢ(t)) * Q10^((T(t) - T_ref)/10)`
 
@@ -37,11 +38,11 @@ ŷ (respiration rate) is computed as a function of the neural network output `R
 """
 function (hm::RespirationRbQ10)(ds_k, ps, st::NamedTuple)
     p = ds_k(hm.predictors)
-    x = ds_k(hm.forcing)
+    x = Array(ds_k(hm.forcing)) # don't propagate names after this
     
     Rb, st = LuxCore.apply(hm.NN, p, ps.ps, st.st) #! NN(αᵢ(t)) ≡ Rb(T(t), M(t))
 
-    ŷ = Rb .* ps.Q10 .^(0.1f0 * (x .- 15.0f0)) # ? should 15°C be the reference temperature also an input variable?
+    Rh = Rb .* ps.Q10 .^(0.1f0 * (x .- 15.0f0)) # ? should 15°C be the reference temperature also an input variable?
 
-    return ŷ, (; Rb, st)
+    return (; Rh), (; Rb, st)
 end

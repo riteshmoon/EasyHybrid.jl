@@ -12,8 +12,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     opt_state = Optimisers.setup(opt, ps)
 
     # ? initial losses
-    is_no_nan_t = .!isnan.(y_train)[1, :]
-    is_no_nan_v = .!isnan.(y_val)[1, :]
+    is_no_nan_t = .!isnan.(y_train)
+    is_no_nan_v = .!isnan.(y_val)
     l_init_train = lossfn(hybridModel, x_train, (y_train, is_no_nan_t), ps, st)
     l_init_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st)
 
@@ -24,8 +24,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     for epoch in 1:nepochs
         for (x, y) in train_loader
             # ? check NaN indices before going forward, and pass filtered `x, y`.
-            is_no_nan = .!isnan.(y)[1, :]
-            if length(is_no_nan)>0
+            is_no_nan = .!isnan.(y)
+            if length(is_no_nan)>0 # ! be careful here, multivariate needs fine tuning
                 grads = Zygote.gradient((ps) -> lossfn(hybridModel, x, (y, is_no_nan), ps, st), ps)[1]
                 Optimisers.update!(opt_state, ps, grads)
             end
