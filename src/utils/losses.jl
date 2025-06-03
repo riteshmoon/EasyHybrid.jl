@@ -25,10 +25,14 @@ end
     lossfn(HM::RespirationRbQ10, ds, y, ps, st)
 """
 function lossfn(HM::BulkDensitySOC, ds, ps, st)
-    y = ds_k(hm.targets)
+    y = ds(HM.targets)
     ŷ, αst = HM(ds, ps, st)
     _, st = αst
     # loss = mean((y[no_nan] .- ŷ[no_nan]).^2)
-    l1 = mean((y(:soc) .- ŷ.SOCconc).^2)
+    loss = 0.0
+    for key in keys(ŷ)
+        loss += mean((y(key) .- ŷ[key]).^2)
+    end
+    
     return loss
 end

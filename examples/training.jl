@@ -31,8 +31,6 @@ yobs =  ds_k(target_names)'[:,:]
 
 NN = Lux.Chain(Dense(41, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 3))
 
-
-
 # #? do different initial Q10s
 hmsss = BulkDensitySOC(NN, _names_cov, target_names, 2.5f0) 
 
@@ -42,10 +40,11 @@ hmsss = BulkDensitySOC(NN, _names_cov, target_names, 2.5f0)
 # # TODO: variance effect due to LSTM vs NN
 
 ps, st = LuxCore.setup(Random.default_rng(), hmsss)
-lossfn(hmsss, ds_k, ps, st)
+ls = lossfn(hmsss, ds_k, ps, st) # #TODO runs up to here
 
-out = train(hmsss, (ds_k, yobs), (:oBD, ); nepochs=1000, batchsize=512, opt=Adam(0.01));
+out = train(hmsss, ds_k, (:oBD, ); nepochs=1000, batchsize=512, opt=Adam(0.01))
 
+out
 
 # with_theme(theme_light()) do 
 #     fig, ax, plt = lines(out.ps_history, color=:grey15;
