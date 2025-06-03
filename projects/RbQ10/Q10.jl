@@ -37,8 +37,8 @@ end
 
 with_theme(theme_light()) do 
     fig = Figure(; size = (1200, 600))
-    ax_train = Axis(fig[1, 1], title = "training")
-    ax_val = Axis(fig[2, 1], title = "validation")
+    ax_train = Makie.Axis(fig[1, 1], title = "training")
+    ax_val = Makie.Axis(fig[2, 1], title = "validation")
     lines!(ax_train, out.ŷ_train[:], color=:orangered, label = "prediction")
     lines!(ax_train, out.y_train[:], color=:dodgerblue, label ="observation")
     # validation
@@ -51,7 +51,7 @@ end
 
 with_theme(theme_light()) do 
     fig = Figure(; size = (1200, 300))
-    ax = Axis(fig[1,1], title = "Loss",
+    ax = Makie.Axis(fig[1,1], title = "Loss",
         yscale=log10, xscale=log10
         )
     lines!(ax, out.train_history, color=:orangered, label = "train")
@@ -69,7 +69,7 @@ ŷ, RbQ10_st = LuxCore.apply(RbQ10, ds_k, out.ps, out.st)
 
 with_theme(theme_light()) do 
     fig = Figure(; size = (1200, 600))
-    ax_train = Axis(fig[1, 1], title = "full time series")
+    ax_train = Makie.Axis(fig[1, 1], title = "full time series")
     lines!(ax_train, ŷ[:], color=:orangered, label = "prediction")
     lines!(ax_train, yobs_all[:], color=:dodgerblue, label ="observation")
     axislegend(ax_train; position=:lt)
