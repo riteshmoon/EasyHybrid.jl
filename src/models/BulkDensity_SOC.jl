@@ -1,5 +1,6 @@
 
 export BulkDensitySOC
+export compute_bulk_density
 
 """
     BulkDensitySOC(NN, predictors, targets, oBD)
