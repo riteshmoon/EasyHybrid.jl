@@ -75,8 +75,6 @@ filtered_stds = stds[stds .> 1]
 filtered_means = means[stds .> 1]
 df[:, filtered_cols] .= (df[:, filtered_cols] .- filtered_means') ./ filtered_stds'
 
-df[:, :SOCconc] .= df[:, :SOCconc] ./ 1000 # convert to fraction
-
 println(size(df))
 
 CSV.write(joinpath(@__DIR__, "data/lucas_preprocessed.csv"), df)
