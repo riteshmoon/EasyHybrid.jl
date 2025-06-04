@@ -12,6 +12,6 @@ features:
     link: /research/RbQ10_results
   - title: BulkDensitySOC
     details: What's this about?
-    link: /research/BulkDSOC_results
+    link: /research/BulkDensitySOC_results
 ---
 ```
