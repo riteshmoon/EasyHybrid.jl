@@ -42,7 +42,7 @@ ds_t_nan = .!isnan.(ds_t)
 ls = lossfn(BulkDSOC, ds_p, (ds_t, ds_t_nan), ps, st) # #TODO runs up to here
 
 println(length(names_cov))
-out = train(BulkDSOC, (ds_p, ds_t), (:oBD, ); nepochs=100, batchsize=512, opt=Adam(0.001));
+out = train(BulkDSOC, (ds_p, ds_t), (:oBD, ); nepochs=100, batchsize=512, opt=AdaGrad(0.01));
 
 # ? analysis, this should also work now!
 
