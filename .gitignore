@@ -5,3 +5,8 @@ tmp_*
 Manifest.toml
 .DS_Store
 *.csv
+
+build/
+node_modules/
+package-lock.json
+Manifest.toml

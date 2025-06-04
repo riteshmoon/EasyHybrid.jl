@@ -1,3 +1,6 @@
+"""
+    EasyHybrid
+"""
 module EasyHybrid
 using Flux
 using DataFrames
