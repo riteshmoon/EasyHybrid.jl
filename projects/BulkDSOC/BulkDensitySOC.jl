@@ -1,3 +1,8 @@
+using Pkg
+Pkg.activate("projects/BulkDSOC")
+Pkg.develop(path=pwd())
+Pkg.instantiate()
+
 using Revise
 using EasyHybrid
 using Lux
@@ -8,7 +13,7 @@ using LuxCore
 using CSV, DataFrames
 using EasyHybrid.MLUtils
 using Statistics
-# using Plots
+import Plots as pl
 # using StatsBase
 
 # ? move the `csv` file into the `BulkDSOC/data` folder (create folder)
@@ -19,21 +24,26 @@ println(size(df_d))
 
 target_names = [:BD, :SOCconc, :CF, :SOCdensity]
 
-# check units of target_names, CF looks like a ratio that's good, BD is g cm^-3 (?)
-df = describe(df[:, target_names])
-names_cov = Symbol.(names(df_d))[4:end-1]
+
+#names_cov = Symbol.(names(df_d))[4:end-1]
+names_cov = Symbol.(names(df_d))[end-40:end-1]
 ds_all = to_keyedArray(df_d);
+
 
 ds_p = ds_all(names_cov);
 ds_t =  ds_all(target_names)
 
 nfeatures = length(names_cov)
-NN = Lux.Chain(Dense(nfeatures, nfeatures*2, Lux.relu), Dense(nfeatures*2, nfeatures*2, Lux.relu),Dense(nfeatures*2, 15, Lux.relu) ,Dense(15, 3))
+NN = Lux.Chain(
+    Dense(nfeatures, nfeatures * 4, Lux.sigmoid),
+    Dense(nfeatures * 4, nfeatures * 2, Lux.sigmoid),
+    Dense(nfeatures * 2, nfeatures, Lux.sigmoid),
+    Dense(nfeatures, 3, Lux.sigmoid) # Output layer
+)
 # ? we might need to set output bounds for the expected parameter values
 
 # ? do different initial oBDs
-BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 0.3f0)
-BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 0.3f0)
+BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 1.f0)
 
 ps, st = LuxCore.setup(Random.default_rng(), BulkDSOC)
 # the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
@@ -42,7 +52,27 @@ ds_t_nan = .!isnan.(ds_t)
 ls = lossfn(BulkDSOC, ds_p, (ds_t, ds_t_nan), ps, st) # #TODO runs up to here
 
 println(length(names_cov))
-out = train(BulkDSOC, (ds_p, ds_t), (:oBD, ); nepochs=100, batchsize=512, opt=AdaGrad(0.01));
+out = train(BulkDSOC, (ds_p, ds_t), (:oBD, ); nepochs=100, batchsize=32, opt=AdaMax(0.01));
+
+# plot trained bulk density function
+trained_oBD = out[:ŷ_train][:oBD]
+trained_mBD = out[:ŷ_train][:mBD]
+
+SOCrange = range(0.0,0.5; step = 0.01)
+median_BDc = compute_bulk_density(SOCrange, trained_oBD, median(trained_mBD))
+q25_BDc = compute_bulk_density(SOCrange, trained_oBD, quantile(trained_mBD, 0.25))
+q75_BDc = compute_bulk_density(SOCrange, trained_oBD, quantile(trained_mBD, 0.75))
+
+pl.plot(ds_t(:SOCconc), ds_t(:BD), seriestype = :scatter, ylabel = :BD, xlabel = :SOCconc)
+pl.plot!(collect(SOCrange), median_BDc, width = 4.0, label = "q50")
+pl.plot!(collect(SOCrange), q25_BDc, width = 4.0, label = "q25")
+pl.plot!(collect(SOCrange), q75_BDc, width = 4.0, label = "q75")
+
+pl.scatter(out[:y_train](:SOCconc),out[:ŷ_train][:SOCconc])
+pl.scatter(out[:y_train](:BD),out[:ŷ_train][:BD])
+pl.scatter(out[:y_train](:CF),out[:ŷ_train][:CF])
+pl.scatter(out[:y_train](:SOCdensity),out[:ŷ_train][:SOCdensity])
+
 
 # ? analysis, this should also work now!
 

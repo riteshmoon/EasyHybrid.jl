@@ -27,6 +27,19 @@ function LuxCore.initialstates(::AbstractRNG, layer::BulkDensitySOC)
     return (; st)
 end
 
+
+"""
+    compute_bulk_density(SOCconc, oBD, mBD)
+
+# model for bulk density based on the Federer (1993) paper http://dx.doi.org/10.1139/x93-131 plus SOC concentrations, density and coarse fraction
+"""
+function compute_bulk_density(SOCconc, oBD, mBD)
+    oF = SOCconc .* 1.724  # TODO: has to be a ratio
+    BD = @. oBD * mBD / (oF * mBD + (1.0f0 - oF) * oBD)
+    return BD
+end
+
+
 """
     BulkDensitySOC(NN, predictors, oBD)(ds_k)
 
@@ -37,15 +50,15 @@ function (hm::BulkDensitySOC)(ds_p, ps, st::NamedTuple)
     
     out, st = LuxCore.apply(hm.NN, p, ps.ps, st.st)
 
-    SOCconc = out[1, :] #TODO has to be a ratio 
+    SOCconc = out[1, :] .* 0.6f0 #TODO has to be a ratio 
     CF = out[2, :]
-    mBD = out[3, :] # mineral bulk density
+    mBD = out[3, :] .* (1.5f0 - 0.75f0) .+ 0.75f0 # mineral bulk density
 
-    oF = SOCconc .* 1.724 #TODO has to be a ratio
+    oBD = sigmoid(ps.oBD) .* (0.4f0 - 0.05f0) .+ 0.05f0
 
-    BD = @. ps.oBD * mBD / (oF * mBD + (1.0f0 - oF) * ps.oBD)
+    BD = compute_bulk_density(SOCconc, oBD, mBD)
     
     SOCdensity = @. SOCconc * BD * (1 - CF)
 
-    return (; SOCconc, CF, BD, SOCdensity), (; mBD, st)
+    return (; SOCconc, CF, BD, SOCdensity, mBD, oBD), (; mBD, st)
 end
