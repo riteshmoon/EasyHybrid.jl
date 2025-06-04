@@ -25,20 +25,27 @@ println(size(df_d))
 target_names = [:BD, :SOCconc, :CF, :SOCdensity]
 
 
-#names_cov = Symbol.(names(df_d))[4:end-1]
-names_cov = Symbol.(names(df_d))[end-40:end-1]
+names_cov = Symbol.(names(df_d))[4:end-1]
+#names_cov = Symbol.(names(df_d))[end-40:end-1]
 ds_all = to_keyedArray(df_d);
 
 
 ds_p = ds_all(names_cov);
 ds_t =  ds_all(target_names)
 
+length(ds_t) * 10 # number of samples as guidance for number of parameters
 nfeatures = length(names_cov)
+p_dropout = 0.2
 NN = Lux.Chain(
-    Dense(nfeatures, nfeatures * 4, Lux.sigmoid),
-    Dense(nfeatures * 4, nfeatures * 2, Lux.sigmoid),
-    Dense(nfeatures * 2, nfeatures, Lux.sigmoid),
-    Dense(nfeatures, 3, Lux.sigmoid) # Output layer
+    Dense(nfeatures, 256, Lux.sigmoid),
+    Dropout(p_dropout),
+    Dense(256, 128, Lux.sigmoid),
+    Dropout(p_dropout),
+    Dense(128, 64, Lux.sigmoid),
+    Dropout(p_dropout),
+    Dense(64, 32, Lux.sigmoid),
+    Dropout(p_dropout),
+    Dense(32, 3, Lux.sigmoid) # Output layer
 )
 # ? we might need to set output bounds for the expected parameter values
 
