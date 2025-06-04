@@ -18,6 +18,9 @@ df_d = dropmissing(df)
 println(size(df_d))
 
 target_names = [:BD, :SOCconc, :CF, :SOCdensity]
+
+# check units of target_names, CF looks like a ratio that's good, BD is g cm^-3 (?)
+df = describe(df[:, target_names])
 names_cov = Symbol.(names(df_d))[4:end-1]
 ds_all = to_keyedArray(df_d);
 
@@ -29,6 +32,7 @@ NN = Lux.Chain(Dense(nfeatures, nfeatures*2, Lux.relu), Dense(nfeatures*2, nfeat
 # ? we might need to set output bounds for the expected parameter values
 
 # ? do different initial oBDs
+BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 0.3f0)
 BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 0.3f0)
 
 ps, st = LuxCore.setup(Random.default_rng(), BulkDSOC)
