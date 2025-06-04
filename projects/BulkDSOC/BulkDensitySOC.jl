@@ -7,32 +7,29 @@ using Random
 using LuxCore
 using CSV, DataFrames
 using EasyHybrid.MLUtils
+using Statistics
+# using Plots
+# using StatsBase
 
 # ? move the `csv` file into the `BulkDSOC/data` folder (create folder)
-df_o = CSV.read(joinpath(@__DIR__, "./data/lucas_overlaid.csv"), DataFrame, normalizenames=true)
-
-names_cov = Symbol.(names(df_o)[end-40:end])
-df = df_o[:, [:bulk_density_fe, :soc, :coarse_vol, names_cov...]]
-
-# ? match target_names
-rename!(df, :bulk_density_fe => :BD, :soc => :SOCconc, :coarse_vol => :CF) # rename as in hybrid model
-
-# ? calculate SOC density
-df[!,:SOCdensity] = df.BD .* df.SOCconc .* (1 .- df.CF) # TODO: check units
-target_names = [:BD, :SOCconc, :CF, :SOCdensity]
-
+df = CSV.read(joinpath(@__DIR__, "./data/lucas_preprocessed.csv"), DataFrame, normalizenames=true)
+println(size(df))
 df_d = dropmissing(df)
+println(size(df_d))
 
+target_names = [:BD, :SOCconc, :CF, :SOCdensity]
+names_cov = Symbol.(names(df_d))[4:end-1]
 ds_all = to_keyedArray(df_d);
 
 ds_p = ds_all(names_cov);
 ds_t =  ds_all(target_names)
 
-NN = Lux.Chain(Dense(41, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 4))
+nfeatures = length(names_cov)
+NN = Lux.Chain(Dense(nfeatures, nfeatures*2, Lux.relu), Dense(nfeatures*2, nfeatures*2, Lux.relu),Dense(nfeatures*2, 15, Lux.relu) ,Dense(15, 3))
 # ? we might need to set output bounds for the expected parameter values
 
 # ? do different initial oBDs
-BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 1.25f0)
+BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 0.3f0)
 
 ps, st = LuxCore.setup(Random.default_rng(), BulkDSOC)
 # the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
@@ -40,7 +37,8 @@ ds_t_nan = .!isnan.(ds_t)
 
 ls = lossfn(BulkDSOC, ds_p, (ds_t, ds_t_nan), ps, st) # #TODO runs up to here
 
-out = train(BulkDSOC, (ds_p, ds_t), (:oBD, ); nepochs=1000, batchsize=512, opt=Adam(0.01));
+println(length(names_cov))
+out = train(BulkDSOC, (ds_p, ds_t), (:oBD, ); nepochs=100, batchsize=512, opt=Adam(0.001));
 
 # ? analysis, this should also work now!
 
