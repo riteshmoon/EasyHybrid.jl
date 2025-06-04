@@ -21,6 +21,9 @@ rename!(df, :bulk_density_fe => :BD, :soc => :SOCconc, :coarse_vol => :CF) # ren
 df[!,:SOCdensity] = df.BD .* df.SOCconc .* (1 .- df.CF) # TODO: check units
 target_names = [:BD, :SOCconc, :CF, :SOCdensity]
 
+# check units of target_names, CF looks like a ratio that's good, BD is g cm^-3 (?)
+df = describe(df[:, target_names])
+
 df_d = dropmissing(df)
 
 ds_all = to_keyedArray(df_d);
@@ -32,7 +35,7 @@ NN = Lux.Chain(Dense(41, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 4))
 # ? we might need to set output bounds for the expected parameter values
 
 # ? do different initial oBDs
-BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 1.25f0)
+BulkDSOC = BulkDensitySOC(NN, names_cov, target_names, 0.3f0)
 
 ps, st = LuxCore.setup(Random.default_rng(), BulkDSOC)
 # the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
