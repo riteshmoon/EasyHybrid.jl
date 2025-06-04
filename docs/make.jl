@@ -21,7 +21,8 @@ makedocs(;
     warnonly = true,
 )
 
-deploydocs(;
-    repo="github.com/EarthyScience/EasyHybrid",
-    push_preview=true,
+DocumenterVitepress.deploydocs(;
+    repo = "github.com/EarthyScience/EasyHybrid", # this must be the full URL!
+    devbranch = "main",
+    push_preview = true,
 )
