@@ -30,6 +30,12 @@ ds_t_nan = .!isnan.(ds_t)
 
 ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LogLoss())
 
+test_tuples = [(; a=rand(Float32), b=rand(Float32))]
+for i in 1:100
+    push!(test_tuples, (; a=rand(Float32), b=rand(Float32)))
+end
+
+twrap = WrappedTuples(test_tuples)
 
 # ? play with :Temp as predictors in NN, temperature sensitivity!
 # TODO: variance effect due to LSTM vs NN
