@@ -1,3 +1,5 @@
 ## BulkDensitySOC
+Authors: 
+Xuemeng Tian
 
-Something.
+$SOCD = BD*SOCconc*(1-CF)$
