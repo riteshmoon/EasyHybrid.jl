@@ -18,6 +18,8 @@ using Statistics
 using ProgressMeter
 using Random
 using NaNStatistics: nanmean
+using StyledStrings
+using Printf
 
 include("utils/wrap_tuples.jl")
 include("utils/tools.jl")
