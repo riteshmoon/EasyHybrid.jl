@@ -38,12 +38,16 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
 
         push!(train_history, l_train)
         push!(val_history, l_val)
+
+        _headers, paddings = header_and_paddings(l_init_train)
+
         next!(prog; showvalues = [
-            ("epoch", epoch),
-            (styled"{red:training: start: }", PrettyTuple(l_init_train)),
-            (styled"{bright_red:current: }", PrettyTuple(l_train)),
-            (styled"{cyan:validation: start: }", PrettyTuple(l_init_val)),
-            (styled"{bright_cyan:current: }", PrettyTuple(l_val)),
+            ("epoch ", epoch),
+            ("targets ", join(_headers, "  ")),
+            (styled"{red:training-start }", styled_values(l_init_train; paddings)),
+            (styled"{bright_red:current }", styled_values(l_train; color=:bright_red, paddings)),
+            (styled"{cyan:validation-start }", styled_values(l_init_val; paddings)),
+            (styled"{bright_cyan:current }", styled_values(l_val; color=:bright_cyan, paddings)),
             ]
             )
     end
@@ -56,17 +60,21 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     return (; train_history, val_history, ŷ_train, αst_train, ŷ_val, αst_val, y_train, y_val, ps_history, ps, st)
 end
 
-struct PrettyTuple{T}
-    nt::T
+function styled_values(nt; digits=5, color=nothing, paddings=nothing)
+    formatted = [
+        begin
+            value_str = @sprintf("%.*f", digits, v)
+            padded = isnothing(paddings) ? value_str : rpad(value_str, paddings[i])
+            isnothing(color) ? padded  : styled"{$color:$padded}"
+        end
+        for (i,v) in enumerate(values(nt))
+    ]
+    return join(formatted, "  ")
 end
 
-function Base.show(io::IO, pt::PrettyTuple)
-    print(io, '(')
-    first = true
-    for (k, v) in pairs(pt.nt)
-        first || print(io, ", ")
-        print(io, k, " = ", @sprintf("%.4f", v))
-        first = false
-    end
-    print(io, ')')
+function header_and_paddings(nt; digits=5)
+    min_val_width = digits + 2  # 1 for "0", 1 for ".", rest for digits
+    paddings = map(k -> max(length(string(k)), min_val_width), keys(nt))
+    headers = [rpad(string(k), w) for (k, w) in zip(keys(nt), paddings)]
+    return headers, paddings
 end
