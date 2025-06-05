@@ -22,11 +22,17 @@ ds_t =  ds_p_f([:Rh]) # do the array so that you conserve the name
 
 NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
 #? do different initial Q10s
-RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Rh, ), (:Temp,), 2.5f0) 
+RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Rh, ), (:Temp,), 2.5f0)
+
+# ? test lossfn
+ps, st = LuxCore.setup(Random.default_rng(), RbQ10)
+# the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
+ds_t_nan = .!isnan.(ds_t)
+ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss())
 
 # ? play with :Temp as predictors in NN, temperature sensitivity!
 # TODO: variance effect due to LSTM vs NN
-out = train(RbQ10, (ds_p_f, ds_t), (:Q10, ); nepochs=1000, batchsize=512, opt=Adam(0.01));
+out = train(RbQ10, (ds_p_f, ds_t), (:Q10, ); nepochs=100, batchsize=512, opt=Adam(0.01));
 
 
 with_theme(theme_light()) do 
@@ -57,8 +63,8 @@ with_theme(theme_light()) do
     ax = Makie.Axis(fig[1,1], title = "Loss",
         yscale=log10, xscale=log10
         )
-    lines!(ax, out.train_history, color=:orangered, label = "train")
-    lines!(ax, out.val_history, color=:dodgerblue, label ="validation")
+    lines!(ax, out.train_history.sum, color=:orangered, label = "train")
+    lines!(ax, out.val_history.sum, color=:dodgerblue, label ="validation")
     # limits!(ax, 1, 1000, 0.04, 1)
     axislegend()
     fig

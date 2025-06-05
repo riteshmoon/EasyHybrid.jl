@@ -19,6 +19,7 @@ using ProgressMeter
 using Random
 using NaNStatistics: nanmean
 
+include("utils/wrap_tuples.jl")
 include("utils/tools.jl")
 include("models/models.jl")
 include("utils/synthetic_test_data.jl")
