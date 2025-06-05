@@ -1,7 +1,7 @@
-# EasyHybrid
+# EasyHybrid.jl
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://verbose-chainsaw-z2zjmlp.pages.github.io/dev/)
-[![CI](https://github.com/HybridModelling/EasyHybrid/actions/workflows/CI.yml/badge.svg)](https://github.com/HybridModelling/EasyHybrid/actions/workflows/CI.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/HybridModelling/EasyHybrid/blob/main/LICENSE)
+[![CI](https://github.com/EarthyScience/EasyHybrid.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/EarthyScience/EasyHybrid.jl/actions/workflows/CI.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/EarthyScience/EasyHybrid.jl/blob/main/LICENSE)
 
 
 

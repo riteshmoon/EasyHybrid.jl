@@ -95,11 +95,11 @@ export default defineConfig({
     sidebar: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
     editLink: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/EarthyScience/EasyHybrid' }
+      { icon: 'github', link: 'https://github.com/EarthyScience/EasyHybrid.jl' }
     ],
     footer: {
-      message: 'Made with <a href="https://documenter.juliadocs.org/stable/" target="_blank"><strong>Documenter.jl</strong></a>, <a href="https://vitepress.dev" target="_blank"><strong>VitePress</strong></a> and <a href="https://luxdl.github.io/DocumenterVitepress.jl/stable/" target="_blank"><strong>DocumenterVitepress.jl</strong></a> <br>',
-      copyright: `© Copyright ${new Date().getUTCFullYear()}.`
+      message: 'Made with <a href="https://luxdl.github.io/DocumenterVitepress.jl/stable/" target="_blank"><strong>DocumenterVitepress.jl</strong></a> <br>',
+      copyright: `© Copyright ${new Date().getUTCFullYear()}. Lazaro Alonso`
     },
   }
 })

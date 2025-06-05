@@ -4,7 +4,7 @@
 layout: home
 
 hero:
-  name: "EasyHybrid"
+  name: "EasyHybrid.jl"
   tagline: combines machine learning with domain scientific modelling.
 features:
   - title: RbQ10

@@ -4,10 +4,10 @@ using EasyHybrid
 makedocs(;
     modules=[EasyHybrid],
     authors="Lazaro Alonso, Markus Reichstein, Bernhard Ahrens",
-    repo="https://github.com/EarthyScience/EasyHybrid",
-    sitename="EasyHybrid",
+    repo="https://github.com/EarthyScience/EasyHybrid.jl",
+    sitename="EasyHybrid.jl",
     format=DocumenterVitepress.MarkdownVitepress(
-        repo = "https://github.com/EarthyScience/EasyHybrid",
+        repo = "https://github.com/EarthyScience/EasyHybrid.jl",
         devurl = "dev",
     ),
     pages=[
@@ -22,7 +22,7 @@ makedocs(;
 )
 
 DocumenterVitepress.deploydocs(;
-    repo = "github.com/EarthyScience/EasyHybrid", # this must be the full URL!
+    repo = "github.com/EarthyScience/EasyHybrid.jl", # this must be the full URL!
     devbranch = "main",
     push_preview = true,
 )
