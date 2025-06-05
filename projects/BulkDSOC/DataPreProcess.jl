@@ -48,12 +48,22 @@ for col in names_cov
     end 
 end
 
-names_cov = filter(x -> !(x in cols_to_drop_col), names_cov)
-
-if !isempty(cols_to_drop_row)
-    df_o = subset(df_o, cols_to_drop_row .=> ByRow(!ismissing))
+names_cov = filter(x -> !(x in cols_to_drop_col), names_cov) # remove cols-to-drop from names_cov
+if !isempty(cols_to_drop_row) 
+    df_o = subset(df_o, cols_to_drop_row .=> ByRow(!ismissing)) # drop rows with missing values in cols_to_drop_row
 end
 println(size(df_o))
+
+cols_to_drop_col = Symbol[] 
+for col in names_cov
+    if std(df_o[:,col])==0
+        push!(cols_to_drop_col, col)  # rm constant col (std==0)
+        select!(df_o, Not(col))
+    end
+end
+names_cov = filter(x -> !(x in cols_to_drop_col), names_cov) # remove cols-to-drop from names_cov
+println(size(df_o))
+
 
 df = df_o[:, [:bulk_density_fe, :soc, :coarse_vol, names_cov...]]
 
@@ -67,13 +77,17 @@ df[!,:SOCdensity] = df.BD .* df.SOCconc .* (1 .- df.CF) # TODO: check units
 target_names = [:BD, :SOCconc, :CF, :SOCdensity]
 # df[:, target_names] = replace.(df[:, target_names], missing => NaN) # replace missing with NaN
 
+# for col in names_cov # to check covairate distribution
+#     println(string(col)[1:10], ' ', round(std(df[:, col]); digits=2), ' ', round(mean(df[:, col]); digits=2))
+# end
+
 # # Normalize covariates with std>1
 means = mean.(eachcol(df[:, names_cov]))
 stds = std.(eachcol(df[:, names_cov]))
-filtered_cols = names_cov[stds .> 1]
-filtered_stds = stds[stds .> 1]
-filtered_means = means[stds .> 1]
-df[:, filtered_cols] .= (df[:, filtered_cols] .- filtered_means') ./ filtered_stds'
+for col in names_cov
+    df[!, col] = Float64.(df[!, col])
+end
+df[:, names_cov] .= (df[:, names_cov] .- means') ./ stds'
 
 println(size(df))
 
