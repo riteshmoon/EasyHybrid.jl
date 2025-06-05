@@ -117,10 +117,11 @@ end
 with_theme(theme_light()) do 
     fig = Figure(; size = (1200, 300))
     ax = Makie.Axis(fig[1,1], title = "Loss",
-        yscale=log10, xscale=log10
+        # yscale=log10, 
+        xscale=log10
         )
-    lines!(ax, out.train_history, color=:orangered, label = "train")
-    lines!(ax, out.val_history, color=:dodgerblue, label ="validation")
+    lines!(ax, out.train_history.sum, color=:orangered, label = "train")
+    lines!(ax, out.val_history.sum, color=:dodgerblue, label ="validation")
     # limits!(ax, 1, 1000, 0.04, 1)
     axislegend()
     fig

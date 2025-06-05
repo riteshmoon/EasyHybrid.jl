@@ -59,3 +59,17 @@ function lossfn(HM::RespirationRbQ10, ds_p, (ds_t, ds_t_nan), ps, st, logging::L
     loss = logging.fn(losses)
     return NamedTuple{(name_keys..., :sum)}([losses..., loss])
 end
+
+"""
+    lossfn(HM::BulkDensitySOC ds_p, (ds_t, ds_t_nan), ps, st, ::LogLoss)
+"""
+function lossfn(HM::BulkDensitySOC, ds_p, (ds_t, ds_t_nan), ps, st, logging::LoggingLoss)
+    ŷ, _ = HM(ds_p, ps, st)
+    y = ds_t(HM.targets)
+    y_nan = ds_t_nan(HM.targets)
+    
+    name_keys =  axiskeys(y, 1)
+    losses = [mean(abs2, (ŷ[k][y_nan(k)] .- y(k)[y_nan(k)])) for k in name_keys]
+    loss = logging.fn(losses)
+    return NamedTuple{(name_keys..., :sum)}([losses..., loss])
+end
