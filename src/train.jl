@@ -14,8 +14,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     # ? initial losses
     is_no_nan_t = .!isnan.(y_train)
     is_no_nan_v = .!isnan.(y_val)
-    l_init_train = lossfn(hybridModel, x_train, (y_train, is_no_nan_t), ps, st, LogLoss())
-    l_init_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LogLoss())
+    l_init_train = lossfn(hybridModel, x_train, (y_train, is_no_nan_t), ps, st, LoggingLoss())
+    l_init_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LoggingLoss())
 
     prog = Progress(nepochs, desc="Training loss")
     train_history = [l_init_train]
@@ -33,8 +33,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
         tmp_e = [copy(getproperty(ps, e)[1]) for e in save_ps]
         push!(ps_history, tmp_e...)
 
-        l_train = lossfn(hybridModel, x_train,  (y_train, is_no_nan_t), ps, st, LogLoss())
-        l_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LogLoss())
+        l_train = lossfn(hybridModel, x_train,  (y_train, is_no_nan_t), ps, st, LoggingLoss())
+        l_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LoggingLoss())
 
         push!(train_history, l_train)
         push!(val_history, l_val)
@@ -47,7 +47,11 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
             ]
             )
     end
+
+    train_history = WrappedTuples(train_history)
+    val_history = WrappedTuples(val_history)
     ŷ_train, αst_train = hybridModel(x_train, ps, st)
     ŷ_val, αst_val = hybridModel(x_val, ps, st)
+
     return (; train_history, val_history, ŷ_train, αst_train, ŷ_val, αst_val, y_train, y_val, ps_history, ps, st)
 end

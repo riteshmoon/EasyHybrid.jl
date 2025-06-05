@@ -1,5 +1,5 @@
 export lossfn
-export LogLoss
+export LoggingLoss
 
 """
     lossfn(lhm::LinearHM, ds, (y, no_nan), ps, st)
@@ -27,18 +27,20 @@ function lossfn(HM::RespirationRbQ10, ds_p, (ds_t, ds_t_nan), ps, st)
     return loss
 end
 
-struct LogLoss end
+Base.@kwdef struct LoggingLoss{T<:Function}
+    fn::T = sum
+end
 
 """
     lossfn(HM::RespirationRbQ10, ds_p, (ds_t, ds_t_nan), ps, st, ::LogLoss)
 """
-function lossfn(HM::RespirationRbQ10, ds_p, (ds_t, ds_t_nan), ps, st, ::LogLoss)
+function lossfn(HM::RespirationRbQ10, ds_p, (ds_t, ds_t_nan), ps, st, logging::LoggingLoss)
     ŷ, _ = HM(ds_p, ps, st)
     y = ds_t(HM.targets)
     y_nan = ds_t_nan(HM.targets)
     
     name_keys =  axiskeys(y, 1)
     losses = [mean(abs2, (ŷ[k][y_nan(k)] .- y(k)[y_nan(k)])) for k in name_keys]
-
-    return NamedTuple{Tuple(name_keys)}(losses)
+    loss = logging.fn(losses)
+    return NamedTuple{(name_keys..., :sum)}([losses..., loss])
 end
