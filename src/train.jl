@@ -40,10 +40,10 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
         push!(val_history, l_val)
         next!(prog; showvalues = [
             ("epoch", epoch),
-            ("training: start: ", l_init_train),
-            ("current: ", l_train),
-            ("validation: start: ", l_init_val),
-            ("current: ", l_val),
+            (styled"{red:training: start: }", PrettyTuple(l_init_train)),
+            (styled"{bright_red:current: }", PrettyTuple(l_train)),
+            (styled"{cyan:validation: start: }", PrettyTuple(l_init_val)),
+            (styled"{bright_cyan:current: }", PrettyTuple(l_val)),
             ]
             )
     end
@@ -54,4 +54,19 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     ŷ_val, αst_val = hybridModel(x_val, ps, st)
 
     return (; train_history, val_history, ŷ_train, αst_train, ŷ_val, αst_val, y_train, y_val, ps_history, ps, st)
+end
+
+struct PrettyTuple{T}
+    nt::T
+end
+
+function Base.show(io::IO, pt::PrettyTuple)
+    print(io, '(')
+    first = true
+    for (k, v) in pairs(pt.nt)
+        first || print(io, ", ")
+        print(io, k, " = ", @sprintf("%.4f", v))
+        first = false
+    end
+    print(io, ')')
 end
