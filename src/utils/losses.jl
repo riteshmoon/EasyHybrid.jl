@@ -27,6 +27,21 @@ function lossfn(HM::RespirationRbQ10, ds_p, (ds_t, ds_t_nan), ps, st)
     return loss
 end
 
+"""
+    lossfn(HM::RespirationRbQ10, ds, y, ps, st)
+"""
+function lossfn(HM::BulkDensitySOC, ds_p, (ds_t, ds_t_nan), ps, st)
+    y = ds_t(HM.targets)
+    y_nan = ds_t_nan(HM.targets)
+    ŷ, _ = HM(ds_p, ps, st)
+
+    loss = 0.0
+    for k in axiskeys(y, 1)
+        loss += mean(abs2, (ŷ[k][y_nan(k)] .- y(k)[y_nan(k)]))
+    end    
+    return loss
+end
+
 Base.@kwdef struct LoggingLoss{T<:Function}
     fn::T = sum
 end
