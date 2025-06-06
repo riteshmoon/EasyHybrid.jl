@@ -61,6 +61,16 @@ ls = lossfn(BulkDSOC, ds_p, (ds_t, ds_t_nan), ps, st) # #TODO runs up to here
 println(length(names_cov))
 out = train(BulkDSOC, (ds_p, ds_t), (:oBD, ); nepochs=100, batchsize=32, opt=AdaMax(0.01));
 
+# plot train history
+series(out.train_history)
+# custom plot
+with_theme(theme_ggplot2()) do 
+   series(out.train_history; color=resample_cmap(:viridis, 5),
+    axislegend = (; nbanks=5, framewidth=0.1, backgroundcolor=:white),
+    axis = (; xscale=log10, yscale=log10, xlabel="epoch", title = "Losses"),
+    figure = (; size = (650, 400))) 
+end
+
 # plot trained bulk density function
 trained_oBD = out[:ŷ_train][:oBD]
 trained_mBD = out[:ŷ_train][:mBD]
