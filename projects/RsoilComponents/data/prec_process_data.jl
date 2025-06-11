@@ -48,7 +48,6 @@ for col in names(dfall)
     end
 end
 
-dfall
+rename!(dfall, :s_rtot => :R_soil, :s_rr => :R_root, :s_rmyc => :R_myc, :s_rh => :R_het) #
 
-ka = to_keyedArray(dfall[!, Not(:timesteps)])
 

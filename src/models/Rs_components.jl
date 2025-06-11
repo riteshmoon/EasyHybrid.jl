@@ -20,12 +20,12 @@ struct Rs_components{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLayer{(:N
 end
 
 # ? Q10 is a parameter, so expand the initialparameters!
-function LuxCore.initialparameters(::AbstractRNG, layer::RespirationRbQ10)
+function LuxCore.initialparameters(::AbstractRNG, layer::Rs_components)
     ps, _ = LuxCore.setup(Random.default_rng(), layer.NN)
     return (; ps, Q10_het = layer.Q10_het, Q10_root = layer.Q10_root, Q10_myc = layer.Q10_myc, )
 end
 
-function LuxCore.initialstates(::AbstractRNG, layer::RespirationRbQ10)
+function LuxCore.initialstates(::AbstractRNG, layer::Rs_components)
     _, st = LuxCore.setup(Random.default_rng(), layer.NN)
     return (; st)
 end
@@ -35,14 +35,14 @@ function RbQ10(Rb, Q10, Temp, Tref)
 end
 
 """
-    RespirationRbQ10(NN, predictors, forcing, targets, Q10)(ds_k)
+    Rs_components(NN, predictors, forcing, targets, Q10)(ds_k)
 
 # Model definition `ŷ = Rb(αᵢ(t)) * Q10^((T(t) - T_ref)/10)`
 
 ŷ (respiration rate) is computed as a function of the neural network output `Rb(αᵢ(t))` and the temperature `T(t)` adjusted by the reference temperature `T_ref` (default 15°C) using the Q10 temperature sensitivity factor.
 ````
 """
-function (hm::RespirationRbQ10)(ds_k, ps, st::NamedTuple)
+function (hm::Rs_components)(ds_k, ps, st::NamedTuple)
     p = ds_k(hm.predictors)
     x = Array(ds_k(hm.forcing)) # don't propagate names after this
     
