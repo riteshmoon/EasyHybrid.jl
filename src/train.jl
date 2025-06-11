@@ -3,7 +3,9 @@ export train
 """
     train(hybridModel, data; nepochs=200, batchsize=10, opt=Adam(0.01))
 """
-function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0.01))
+function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0.01),
+        # metrics =( :mse, :nse) # TODO: include a list of metrics
+        )
     # ? split training and validation data
     (x_train, y_train), (x_val, y_val) = splitobs(data; at=0.8, shuffle=false)
     train_loader = DataLoader((x_train, y_train), batchsize=batchsize, shuffle=true);
@@ -35,7 +37,9 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
 
         l_train = lossfn(hybridModel, x_train,  (y_train, is_no_nan_t), ps, st, LoggingLoss())
         l_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LoggingLoss())
+        # out_metrics = [m() for m in metrics] # TODO: include a list of metrics!
 
+        
         push!(train_history, l_train)
         push!(val_history, l_val)
 
@@ -50,6 +54,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
             (styled"{bright_cyan:current }", styled_values(l_val; color=:bright_cyan, paddings)),
             ]
             )
+            # TODO: log metrics
     end
 
     train_history = WrappedTuples(train_history)
@@ -68,6 +73,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     val_obs = toDataFrame(y_val)
     val_hats = toDataFrame(ŷ_val, target_names)
     val_obs_pred = hcat(val_obs, val_hats)
+    # TODO: save/output metrics
 
     return (; train_history, val_history, train_obs_pred, val_obs_pred, αst_train, αst_val, ps_history, ps, st)
 end
