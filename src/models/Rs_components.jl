@@ -54,7 +54,7 @@ function (hm::RespirationRbQ10)(ds_k, ps, st::NamedTuple)
 
     R_het = RbQ10(Rb_h, ps.Q10_het, x, 15.f0)
     R_root = RbQ10(Rb_root, ps.Q10_root, x, 15.f0)
-    R_myc = RbQ10(Rb_root, ps.Q10_myc, x, 15.f0)
+    R_myc = RbQ10(Rb_myc, ps.Q10_myc, x, 15.f0)
 
     R_soil = R_het  + R_root + R_myc
 
