@@ -1,15 +1,8 @@
-using Pkg
-Pkg.activate("projects/Rsoilcomponents")
-Pkg.develop(path=pwd())
-Pkg.instantiate()
-
-using Revise
-using EasyHybrid
 using CSV
 using Dates
 using DataFrames
-using EasyHybrid.AxisKeys
-dfall=CSV.read("projects/Rsoilcomponents/data/RESP_07_08_09_10_filled.csv", DataFrame, normalizenames=true, missingstring="NA")
+
+dfall=CSV.read("projects/RsoilComponents/data/RESP_07_08_09_10_filled.csv", DataFrame, normalizenames=true, missingstring="NA") # /Net/Groups/BGI/scratch/bahrens/DataHeinemeyerRh
 
 dfall.timesteps = map(eachrow(dfall)) do r
     dlist = (r.year,r.month,r.day,r.hour)

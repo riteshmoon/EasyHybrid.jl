@@ -2,11 +2,11 @@
 export Rs_components
 
 """
-    Rs_components(NN, predictors, forcing, targets, Q10)
+    Rs_components(NN, predictors, forcing, targets, Q10_het, Q10_root, Q10_myc)
 
 A linear hybrid model with a neural network `NN`, `predictors`, `targets` and `forcing` terms.
 """
-struct Rs_components{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :forcing, :targets, :Q10)}
+struct Rs_components{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :forcing, :targets, :Q10_het, :Q10_root, :Q10_myc)}
     NN
     predictors
     forcing
@@ -31,7 +31,7 @@ function LuxCore.initialstates(::AbstractRNG, layer::Rs_components)
 end
 
 function RbQ10(Rb, Q10, Temp, Tref)
-    Rb .* Q10 .^(0.1f0 .* (Temp .- Tref))
+    @. Rb * Q10 ^(0.1f0 * (Temp - Tref))
 end
 
 """
@@ -52,9 +52,10 @@ function (hm::Rs_components)(ds_k, ps, st::NamedTuple)
     Rb_root = out[2,:]
     Rb_myc = out[3,:]
 
-    R_het = RbQ10(Rb_h, ps.Q10_het, x, 15.f0)
-    R_root = RbQ10(Rb_root, ps.Q10_root, x, 15.f0)
-    R_myc = RbQ10(Rb_myc, ps.Q10_myc, x, 15.f0)
+    R_het = RbQ10(Rb_het, ps.Q10_het, x[1,:], 15.f0) # TODO out of memory error here	
+    #R_het = Rb_het .* ps.Q10_het .^(0.1f0 * (x .- 15.0f0))
+    R_root = RbQ10(Rb_root, ps.Q10_root, x[1,:], 15.f0)
+    R_myc = RbQ10(Rb_myc, ps.Q10_myc, x[1,:], 15.f0)
 
     R_soil = R_het  + R_root + R_myc
 
