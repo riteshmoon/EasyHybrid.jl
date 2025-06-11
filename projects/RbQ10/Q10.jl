@@ -7,6 +7,7 @@ using EasyHybrid
 using Lux
 using Optimisers
 using GLMakie
+using AlgebraOfGraphics
 using Random
 using LuxCore
 using CSV, DataFrames
@@ -37,27 +38,44 @@ ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss())
 
 # ? play with :Temp as predictors in NN, temperature sensitivity!
 # TODO: variance effect due to LSTM vs NN
-out = train(RbQ10, (ds_p_f, ds_t), (:Q10, ); nepochs=100, batchsize=512, opt=Adam(0.01));
+out = train(RbQ10, (ds_p_f, ds_t), (:Q10, ); nepochs=200, batchsize=512, opt=Adam(0.01));
 
+## Plotting results
+series(out.ps_history; axis=(; xlabel = "epoch", ylabel=""))
 
-with_theme(theme_light()) do 
-    fig, ax, plt = lines(out.ps_history, color=:grey15;
-        #axis = (xscale = log10, yscale=log10),
-        label = "Q10",
-        figure = (; size = (800, 400)))
-    # ylims!(ax, 0.07, 2.5)
-    fig
+# with AoG
+yvars = [:Rh]
+xvars = Symbol.(string.(yvars) .* "_pred")
+
+layers = visual(Scatter, alpha = 0.35)
+plt = data(out.train_obs_pred) * layers * mapping(xvars, yvars, col=dims(1) => renamer(string.(yvars)))
+plt *= mapping(color = dims(1) => renamer(string.(xvars))=> "Metrics")
+# linear
+l_linear = linear() * visual(color=:grey25)
+plt += data(out.train_obs_pred) * l_linear *  mapping(xvars, yvars, col=dims(1) => renamer(string.(yvars)))
+
+let
+   draw(plt, scales(
+        X = (; label = rich("Prediction", font=:bold)),
+        Y = (; label = "Observation"),
+        Color = (; palette = [:tomato, :teal, :orange, :dodgerblue3])
+   ),
+    legend = (; position=:right, titleposition=:top, merge=false),
+    facet = (; linkxaxes = :none, linkyaxes = :none,),
+) 
 end
 
-with_theme(theme_light()) do 
+
+
+let
     fig = Figure(; size = (1200, 600))
     ax_train = Makie.Axis(fig[1, 1], title = "training")
     ax_val = Makie.Axis(fig[2, 1], title = "validation")
-    lines!(ax_train, out.ŷ_train.Rh[:], color=:orangered, label = "prediction")
-    lines!(ax_train, out.y_train[:], color=:dodgerblue, label ="observation")
+    lines!(ax_train, out.train_obs_pred[!, :Rh_pred], color=:orangered, label = "prediction")
+    lines!(ax_train, out.train_obs_pred[!, :Rh], color=:dodgerblue, label ="observation")
     # validation
-    lines!(ax_val, out.ŷ_val.Rh[:], color=:orangered, label = "prediction")
-    lines!(ax_val, out.y_val[:], color=:dodgerblue, label ="observation")
+    lines!(ax_val, out.val_obs_pred[!, :Rh_pred], color=:orangered, label = "prediction")
+    lines!(ax_val, out.val_obs_pred[!, :Rh], color=:dodgerblue, label ="observation")
     axislegend(; position=:lt)
     Label(fig[0,1], "Observations vs predictions", tellwidth=false)
     fig

@@ -129,5 +129,6 @@ end
 
 function toDataFrame(ka, target_names)
     data = [getproperty(ka, t_name) for t_name in target_names]
+    data = length(target_names)==1 ? data[1]' : data
     return DataFrame(data, string.(target_names) .* "_pred")
 end

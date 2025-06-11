@@ -22,7 +22,11 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     prog = Progress(nepochs, desc="Training loss")
     train_history = [l_init_train]
     val_history = [l_init_val]
-    ps_history = [copy(getproperty(ps, e)[1]) for e in save_ps]
+    # track physical parameters
+    ps_values_init = [copy(getproperty(ps, e)[1]) for e in save_ps]
+    ps_init = NamedTuple{save_ps}(ps_values_init)
+    ps_history = [ps_init]
+
     for epoch in 1:nepochs
         for (x, y) in train_loader
             # ? check NaN indices before going forward, and pass filtered `x, y`.
@@ -32,8 +36,9 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
                 Optimisers.update!(opt_state, ps, grads)
             end
         end
-        tmp_e = [copy(getproperty(ps, e)[1]) for e in save_ps]
-        push!(ps_history, tmp_e...)
+        ps_values = [copy(getproperty(ps, e)[1]) for e in save_ps]
+        tmp_e = NamedTuple{save_ps}(ps_values)
+        push!(ps_history, tmp_e)
 
         l_train = lossfn(hybridModel, x_train,  (y_train, is_no_nan_t), ps, st, LoggingLoss())
         l_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LoggingLoss())
@@ -59,12 +64,12 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
 
     train_history = WrappedTuples(train_history)
     val_history = WrappedTuples(val_history)
+    ps_history = WrappedTuples(ps_history)
+
     ŷ_train, αst_train = hybridModel(x_train, ps, st)
     ŷ_val, αst_val = hybridModel(x_val, ps, st)
-
     # training
-    target_names = y_val.row
-    # @show target_names
+    target_names = hybridModel.targets
     # ? this could be saved to disk if needed for big sizes.
     train_obs = toDataFrame(y_train)
     train_hats = toDataFrame(ŷ_train, target_names)
@@ -73,9 +78,15 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     val_obs = toDataFrame(y_val)
     val_hats = toDataFrame(ŷ_val, target_names)
     val_obs_pred = hcat(val_obs, val_hats)
+    # ? diffs, additional predictions without observational counterparts!
+    # TODO: better!
+    set_diff = setdiff(keys(ŷ_train), target_names)
+    train_diffs = !isempty(set_diff) ? NamedTuple{Tuple(set_diff)}([getproperty(ŷ_train, e) for e in set_diff]) : nothing 
+    val_diffs = !isempty(set_diff) ? NamedTuple{Tuple(set_diff)}([getproperty(ŷ_val, e) for e in set_diff]) : nothing
+
     # TODO: save/output metrics
 
-    return (; train_history, val_history, train_obs_pred, val_obs_pred, αst_train, αst_val, ps_history, ps, st)
+    return (; train_history, val_history, ps_history, train_obs_pred, val_obs_pred, train_diffs, val_diffs, αst_train, αst_val, ps, st)
 end
 
 function styled_values(nt; digits=5, color=nothing, paddings=nothing)
