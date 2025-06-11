@@ -12,14 +12,22 @@ using LuxCore
 using CSV, DataFrames
 using EasyHybrid.MLUtils
 
-include("projects/RsoilComponents/data/prec_process_data.jl")
+include("projects/RsoilComponents/data/prec_process_data.jl") #TODO fix runs with Crtl + Enter but not Shift + Enter
 
 df = dfall[!, Not(:timesteps)]
 
-ds_p_f = to_keyedArray(Float32.(df[!, [:cham_temp, :moisture, :rgpot]])) 
+ds_p_f = to_keyedArray(Float32.(df[!, [:cham_temp_filled, :moisture_filled, :rgpot]])) 
 
 target_names = [:R_soil, :R_root, :R_myc, :R_het]
 ds_t = to_keyedArray(Float32.(df[!, target_names])) # targets
 
 NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 3));
-Rsc = Rs_components(NN, (:rgpot, :moisture), target_names, (:cham_temp,), 2.5f0, 2.5f0, 2.5f0)
+Rsc = Rs_components(NN, (:rgpot, :moisture_filled), target_names, (:cham_temp_filled,), 2.5f0, 2.5f0, 2.5f0)
+
+ps, st = LuxCore.setup(Random.default_rng(), Rsc)
+# the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
+ds_t_nan = .!isnan.(ds_t)
+
+ls = lossfn(Rsc, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss()) # #TODO should be multiple losses?
+
+out = train(Rsc, (ds_p_f, ds_t), (:Q10_het, :Q10_myc, :Q10_root, ); nepochs=100, batchsize=512, opt=Adam(0.01));
