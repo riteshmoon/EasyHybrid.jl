@@ -108,3 +108,5 @@ with_theme(theme_light()) do
         legend =(position=:top,),
         figure = (; size = (1400, 400)))    
 end
+
+# TODO: get the minmax from obs and Prediction to set the right limits (make a square!)
