@@ -57,7 +57,19 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     ŷ_train, αst_train = hybridModel(x_train, ps, st)
     ŷ_val, αst_val = hybridModel(x_val, ps, st)
 
-    return (; train_history, val_history, ŷ_train, αst_train, ŷ_val, αst_val, y_train, y_val, ps_history, ps, st)
+    # training
+    target_names = y_val.row
+    # @show target_names
+    # ? this could be saved to disk if needed for big sizes.
+    train_obs = toDataFrame(y_train)
+    train_hats = toDataFrame(ŷ_train, target_names)
+    train_obs_pred = hcat(train_obs, train_hats)
+    # validation
+    val_obs = toDataFrame(y_val)
+    val_hats = toDataFrame(ŷ_val, target_names)
+    val_obs_pred = hcat(val_obs, val_hats)
+
+    return (; train_history, val_history, train_obs_pred, val_obs_pred, αst_train, αst_val, ps_history, ps, st)
 end
 
 function styled_values(nt; digits=5, color=nothing, paddings=nothing)
