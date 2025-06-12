@@ -22,8 +22,8 @@ using JLD2
 using StyledStrings
 using Printf
 
-include("utils/io.jl")
 include("utils/wrap_tuples.jl")
+include("utils/io.jl")
 include("utils/tools.jl")
 include("models/models.jl")
 include("utils/synthetic_test_data.jl")

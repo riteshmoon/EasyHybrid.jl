@@ -4,10 +4,11 @@ export train
     train(hybridModel, data; nepochs=200, batchsize=10, opt=Adam(0.01))
 """
 function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0.01),
+    file_name=nothing,
         # metrics =( :mse, :nse) # TODO: include a list of metrics
         )
     # all the KeyedArray thing!
-    
+
     # ? split training and validation data
     (x_train, y_train), (x_val, y_val) = splitobs(data; at=0.8, shuffle=false)
     train_loader = DataLoader((x_train, y_train), batchsize=batchsize, shuffle=true);
@@ -27,6 +28,9 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     ps_values_init = [copy(getproperty(ps, e)[1]) for e in save_ps]
     ps_init = NamedTuple{save_ps}(ps_values_init)
     ps_history = [ps_init]
+    
+    file_name = resolve_path(file_name)
+    save_ps_st(file_name, hybridModel, ps, st, save_ps)
 
     prog = Progress(nepochs, desc="Training loss")
     for epoch in 1:nepochs
@@ -38,6 +42,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
                 Optimisers.update!(opt_state, ps, grads)
             end
         end
+        save_ps_st!(file_name, hybridModel, ps, st, save_ps, epoch)
+
         ps_values = [copy(getproperty(ps, e)[1]) for e in save_ps]
         tmp_e = NamedTuple{save_ps}(ps_values)
         push!(ps_history, tmp_e)
