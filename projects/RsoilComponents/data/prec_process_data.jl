@@ -25,7 +25,7 @@ end
 
 lat,lon = 53,1
 
-include("C:/Users/bahrens/Desktop/EasyHybrid/projects/RsoilComponents/data/g_pot.jl")
+include("g_pot.jl")
 hourofday(t) = (t-DateTime(year(t),month(t),day(t)))/Millisecond(1)/(1000*60*60) 
 
 dfall.rgpot = map(t->g_pot(lat,lon,dayofyear(t),hourofday(t))/1000,dfall.timesteps);
