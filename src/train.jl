@@ -6,6 +6,8 @@ export train
 function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0.01),
         # metrics =( :mse, :nse) # TODO: include a list of metrics
         )
+    # all the KeyedArray thing!
+    
     # ? split training and validation data
     (x_train, y_train), (x_val, y_val) = splitobs(data; at=0.8, shuffle=false)
     train_loader = DataLoader((x_train, y_train), batchsize=batchsize, shuffle=true);
@@ -19,7 +21,6 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     l_init_train = lossfn(hybridModel, x_train, (y_train, is_no_nan_t), ps, st, LoggingLoss())
     l_init_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LoggingLoss())
 
-    prog = Progress(nepochs, desc="Training loss")
     train_history = [l_init_train]
     val_history = [l_init_val]
     # track physical parameters
@@ -27,6 +28,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     ps_init = NamedTuple{save_ps}(ps_values_init)
     ps_history = [ps_init]
 
+    prog = Progress(nepochs, desc="Training loss")
     for epoch in 1:nepochs
         for (x, y) in train_loader
             # ? check NaN indices before going forward, and pass filtered `x, y`.
