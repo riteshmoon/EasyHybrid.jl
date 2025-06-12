@@ -17,23 +17,26 @@ using Zygote
 using EasyHybrid.JLD2
 # data
 df_o = CSV.read("/Users/lalonso/Documents/HybridML/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
-
+# some pre-processing
 df = copy(df_o)
 df[!, :Temp] = df[!, :Temp] .- 273.15 # convert to Celsius
 # df = filter(:Respiration_heterotrophic => !isnan, df)
 rename!(df, :Respiration_heterotrophic => :Rh)  # rename as in hybrid model
-df_forcing = df
 
-ds_p_f = to_keyedArray(Float32.(df_forcing)) # predictors + forcing
-ds_t =  ds_p_f([:Rh]) # do the array so that you conserve the name
+ds_keyed = to_keyedArray(Float32.(df)) # predictors + forcing
 
+# Define neural network
 NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
-#? do different initial Q10s
-RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Rh, ), (:Temp,), 2.5f0)
+# instantiate Hybrid Model
+RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Rh, ), (:Temp,), 2.5f0) # ? do different initial Q10s
+# train model
+out = train(RbQ10, ds_keyed, (:Q10, ); nepochs=200, batchsize=512, opt=Adam(0.01));
 
+## legacy
 # ? test lossfn
 ps, st = LuxCore.setup(Random.default_rng(), RbQ10)
 # the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
+ds_p_f, ds_t = EasyHybrid.prepare_data(RbQ10, ds_keyed)
 ds_t_nan = .!isnan.(ds_t)
 ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss())
 

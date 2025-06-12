@@ -7,10 +7,11 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     file_name=nothing,
         # metrics =( :mse, :nse) # TODO: include a list of metrics
         )
+    data_ = prepare_data(hybridModel, data)
     # all the KeyedArray thing!
 
     # ? split training and validation data
-    (x_train, y_train), (x_val, y_val) = splitobs(data; at=0.8, shuffle=false)
+    (x_train, y_train), (x_val, y_val) = splitobs(data_; at=0.8, shuffle=false)
     train_loader = DataLoader((x_train, y_train), batchsize=batchsize, shuffle=true);
     # ? setup model
     ps, st = LuxCore.setup(Random.default_rng(), hybridModel)
@@ -126,4 +127,36 @@ function header_and_paddings(nt; digits=5)
     paddings = map(k -> max(length(string(k)), min_val_width), keys(nt))
     headers = [rpad(string(k), w) for (k, w) in zip(keys(nt), paddings)]
     return headers, paddings
+end
+
+"""
+    prepare_data(hm, data)
+Utility function to see if the data is already in the expected format or if further filtering and re-packing is needed.
+
+# Arguments:
+- hm: The Hybrid Model
+- data: either a Tuple of KeyedArrays or a single KeyedArray.
+
+Returns a tuple of KeyedArrays
+"""
+function prepare_data(hm, data)
+    data = if isa(data, Tuple) # tuple of key arrays
+        return data
+    else
+        targets = hm.targets
+        predictors_forcing = Symbol[]
+        if hasproperty(hm, :predictors)
+            push!(predictors_forcing, hm.predictors...)
+        end
+        if hasproperty(hm, :forcing)
+            push!(predictors_forcing, hm.forcing...)
+        end
+        if isempty(predictors_forcing)
+            @warn "Note that you don't have predictors or forcing variables."
+        end
+        if isempty(targets)
+            @warn "Note that you don't have target names."
+        end
+        return (data(predictors_forcing), data(targets))
+    end
 end
