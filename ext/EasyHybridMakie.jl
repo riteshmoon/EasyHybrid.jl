@@ -2,7 +2,10 @@ module EasyHybridMakie
 
 using EasyHybrid
 using Makie
+using Makie.Colors
 import Makie
+
+include("HybridTheme.jl")
 
 @debug "Extension loaded!"
 
@@ -23,6 +26,11 @@ function _series(wt::WrappedTuples, attributes)
     user_attributes = Makie.Attributes(; attributes...)
     merged_attributes = merge(user_attributes, plot_attributes)
     return data_matrix, merged_attributes
+end
+
+function __init__()
+    @debug "setting theme_easy_hybrid"
+    set_theme!(theme_easy_hybrid())
 end
 
 end
