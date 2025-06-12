@@ -32,7 +32,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
             # ? check NaN indices before going forward, and pass filtered `x, y`.
             is_no_nan = .!isnan.(y)
             if length(is_no_nan)>0 # ! be careful here, multivariate needs fine tuning
-                grads = Zygote.gradient((ps) -> lossfn(hybridModel, x, (y, is_no_nan), ps, st), ps)[1]
+                grads = Zygote.gradient((ps) -> lossfn(hybridModel, x, (y, is_no_nan), ps, st), ps)[1] #TODO do we have to do losses then one with logging, one without
                 Optimisers.update!(opt_state, ps, grads)
             end
         end
