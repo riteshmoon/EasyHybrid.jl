@@ -1,4 +1,5 @@
-export  load_group
+export get_all_groups
+export load_group
 function save_ps_st(file_name, hm, ps, st, save_ps)
     hm_name = string(nameof(typeof(hm)))
     # split physical parameters
@@ -8,7 +9,7 @@ function save_ps_st(file_name, hm, ps, st, save_ps)
     end
 
     jldopen(file_name, "w") do file
-        file["$hm_name/epoch_0"] = (ps, st)
+        file["HybridModel:$hm_name/epoch_0"] = (ps, st)
         if !isempty(save_ps)
             file["physical_params/epoch_0"] = tmp_e
         end
@@ -31,13 +32,59 @@ function save_ps_st!(file_name, hm, ps, st, save_ps, epoch)
     end
 end
 
+function save_train_val_loss!(file_name, train_val, train_or_val_name, epoch)
+    jldopen(file_name, "a+") do file
+        file["$train_or_val_name/epoch_$epoch"] = train_val
+    end
+end
+
+function save_predictions!(file_name, predictions, states, train_or_val_name)
+    jldopen(file_name, "a+") do file
+        file["predictions/$train_or_val_name"] = predictions
+        file["predictions/$(train_or_val_name)_states"] = states
+    end
+end
+function save_observations!(file_name, target_names, yobs, train_or_val_name)
+    # keyed array to NamedTuple
+    named_yobs = to_named_tuple(yobs, target_names)
+    jldopen(file_name, "a+") do file
+        file["observations/$train_or_val_name"] = named_yobs
+    end
+end
+
+function to_named_tuple(ka, target_names)
+    arrays = [Array(ka(k)) for k in target_names]
+    return NamedTuple{Tuple(target_names)}(arrays)
+end
+
 function load_group(file_name, group)
     group_tmp = JLD2.load(file_name, group)
-    epoch_keys = collect(keys(group_tmp))
-    sorted_keys = sort(epoch_keys, by = k -> parse(Int, split(k, "_")[end]))
-    collected_data = [group_tmp[k] for k in sorted_keys]
-    
-    return collected_data, sorted_keys
+    group_keys = collect(keys(group_tmp))
+    if occursin("epoch", first(group_keys))
+        sorted_keys = sort(group_keys, by = k -> parse(Int, split(k, "_")[end]))
+        collected_data = [group_tmp[k] for k in sorted_keys]
+        return collected_data, sorted_keys
+    else
+        return group_tmp
+    end
+end
+
+function get_all_groups(filename)
+    groups = String[]
+    JLD2.jldopen(filename, "r") do file
+        function recurse_groups(g, path="")
+            for k in keys(g)
+                obj = g[k]
+                newpath = joinpath(path, k)
+                if obj isa JLD2.Group
+                    push!(groups, newpath)
+                    recurse_groups(obj, newpath)
+                end
+            end
+        end
+        recurse_groups(file)
+    end
+    return groups
 end
 
 function resolve_path(file_name)
