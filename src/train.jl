@@ -4,9 +4,12 @@ export train
     train(hybridModel, data; nepochs=200, batchsize=10, opt=Adam(0.01))
 """
 function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0.01),
+    file_name=nothing,
         # metrics =( :mse, :nse) # TODO: include a list of metrics
         )
     data_ = prepare_data(hybridModel, data)
+    # all the KeyedArray thing!
+
     # ? split training and validation data
     (x_train, y_train), (x_val, y_val) = splitobs(data_; at=0.8, shuffle=false)
     train_loader = DataLoader((x_train, y_train), batchsize=batchsize, shuffle=true);
@@ -20,14 +23,19 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     l_init_train = lossfn(hybridModel, x_train, (y_train, is_no_nan_t), ps, st, LoggingLoss())
     l_init_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LoggingLoss())
 
-    prog = Progress(nepochs, desc="Training loss")
     train_history = [l_init_train]
     val_history = [l_init_val]
     # track physical parameters
     ps_values_init = [copy(getproperty(ps, e)[1]) for e in save_ps]
     ps_init = NamedTuple{save_ps}(ps_values_init)
     ps_history = [ps_init]
+    
+    file_name = resolve_path(file_name)
+    save_ps_st(file_name, hybridModel, ps, st, save_ps)
+    save_train_val_loss!(file_name,l_init_train, "training_loss", 0)
+    save_train_val_loss!(file_name,l_init_val, "validation_loss", 0)
 
+    prog = Progress(nepochs, desc="Training loss")
     for epoch in 1:nepochs
         for (x, y) in train_loader
             # ? check NaN indices before going forward, and pass filtered `x, y`.
@@ -37,6 +45,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
                 Optimisers.update!(opt_state, ps, grads)
             end
         end
+        save_ps_st!(file_name, hybridModel, ps, st, save_ps, epoch)
+
         ps_values = [copy(getproperty(ps, e)[1]) for e in save_ps]
         tmp_e = NamedTuple{save_ps}(ps_values)
         push!(ps_history, tmp_e)
@@ -44,7 +54,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
         l_train = lossfn(hybridModel, x_train,  (y_train, is_no_nan_t), ps, st, LoggingLoss())
         l_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, st, LoggingLoss())
         # out_metrics = [m() for m in metrics] # TODO: include a list of metrics!
-
+        save_train_val_loss!(file_name, l_train, "training_loss", epoch)
+        save_train_val_loss!(file_name, l_val, "validation_loss", epoch)
         
         push!(train_history, l_train)
         push!(val_history, l_val)
@@ -67,10 +78,19 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     val_history = WrappedTuples(val_history)
     ps_history = WrappedTuples(ps_history)
 
+    # ? save final evaluation or best at best validation value
+
     ŷ_train, αst_train = hybridModel(x_train, ps, st)
     ŷ_val, αst_val = hybridModel(x_val, ps, st)
+    save_predictions!(file_name, ŷ_train, αst_train, "training")
+    save_predictions!(file_name, ŷ_val, αst_val, "validation")
+
     # training
     target_names = hybridModel.targets
+    save_observations!(file_name, target_names, y_train, "training")
+    save_observations!(file_name, target_names, y_val, "validation")
+    # save split obs (targets)
+
     # ? this could be saved to disk if needed for big sizes.
     train_obs = toDataFrame(y_train)
     train_hats = toDataFrame(ŷ_train, target_names)

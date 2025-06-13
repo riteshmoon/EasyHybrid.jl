@@ -22,7 +22,8 @@ function LuxCore.initialparameters(::AbstractRNG, layer::RespirationRbQ10)
     ps, _ = LuxCore.setup(Random.default_rng(), layer.NN)
     return (; ps, Q10 = layer.Q10,)
 end
-
+# TODO: trainable vs non-trainable! set example!
+# see: https://lux.csail.mit.edu/stable/manual/migrate_from_flux#Implementing-Custom-Layers
 function LuxCore.initialstates(::AbstractRNG, layer::RespirationRbQ10)
     _, st = LuxCore.setup(Random.default_rng(), layer.NN)
     return (; st)
@@ -46,3 +47,4 @@ function (hm::RespirationRbQ10)(ds_k, ps, st::NamedTuple)
 
     return (; Rh), (; Rb, st)
 end
+

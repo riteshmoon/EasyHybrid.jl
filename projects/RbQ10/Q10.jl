@@ -14,6 +14,7 @@ using CSV, DataFrames
 using EasyHybrid.MLUtils
 using EasyHybrid.AxisKeys
 using Zygote
+using EasyHybrid.JLD2
 # data
 df_o = CSV.read("/Users/lalonso/Documents/HybridML/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
 # some pre-processing
@@ -42,6 +43,27 @@ ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss())
 # ? play with :Temp as predictors in NN, temperature sensitivity!
 # TODO: variance effect due to LSTM vs NN
 out = train(RbQ10, (ds_p_f, ds_t), (:Q10, ); nepochs=200, batchsize=512, opt=Adam(0.01));
+
+output_file = joinpath(@__DIR__, "output_tmp/trained_model.jld2")
+# o = jldopen(output_file, "r")
+# close(o)
+
+all_groups = get_all_groups(output_file)
+
+predictions = load_group(output_file, "predictions")
+
+physical_params, _ = load_group(output_file, "physical_params")
+
+series(WrappedTuples(physical_params); axis=(; xlabel = "epoch", ylabel=""))
+
+training_loss, _ = load_group(output_file, "training_loss")
+series(WrappedTuples(training_loss); axis=(; xlabel = "epoch", ylabel="training loss", xscale=log10, yscale=log10))
+
+validation_loss, _ = load_group(output_file, "validation_loss")
+series(WrappedTuples(validation_loss); axis=(; xlabel = "epoch", ylabel="validation loss", xscale=log10, yscale=log10))
+
+
+# load_group(output_file, "RespirationRbQ10")
 
 ## Plotting results
 series(out.ps_history; axis=(; xlabel = "epoch", ylabel=""))
