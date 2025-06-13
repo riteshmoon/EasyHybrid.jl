@@ -12,6 +12,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Get Started" => "get_started.md",
         "Research" =>[
             "RbQ10" => "research/RbQ10_results.md"
             "BulkDensitySOC" => "research/BulkDensitySOC_results.md"

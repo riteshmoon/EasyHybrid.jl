@@ -6,6 +6,16 @@ layout: home
 hero:
   name: "EasyHybrid.jl"
   tagline: combines machine learning with domain scientific modelling.
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /get_started
+    - theme: alt
+      text: View on Github
+      link: https://github.com/EarthyScience/EasyHybrid.jl
+    - theme: alt
+      text: API
+      link: /api
 features:
   - title: RbQ10
     details: What is this about?
@@ -14,4 +24,13 @@ features:
     details: What's this about?
     link: /research/BulkDensitySOC_results
 ---
+```
+
+## How to Install EasyHybrid.jl?
+
+Get the latest unreleased version of `EasyHybrid.jl` by run the following command: (in most cases the released version will be same as the version on github)
+
+```julia
+julia> using Pkg
+julia> Pkg.add(url="https://github.com/EarthyScience/EasyHybrid.jl")
 ```
