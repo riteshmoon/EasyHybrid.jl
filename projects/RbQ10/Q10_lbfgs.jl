@@ -17,7 +17,7 @@ using CSV, DataFrames
 using Statistics
 using Printf
 
-df = CSV.read("/Users/lalonso/Documents/HybridML/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
+df = CSV.read("projects/RbQ10/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
 
 df[!, :Temp] = df[!, :Temp] .- 273.15 # convert to Celsius
 df_forcing = filter(:Respiration_heterotrophic => !isnan, df)
