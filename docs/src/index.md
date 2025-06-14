@@ -5,7 +5,10 @@ layout: home
 
 hero:
   name: "EasyHybrid.jl"
-  tagline: combines machine learning with domain scientific modelling.
+  tagline: Integrates neural networks with mechanistic models.
+  image:
+    src: /logo.png
+    alt: EasyHybrid
   actions:
     - theme: brand
       text: Get Started
