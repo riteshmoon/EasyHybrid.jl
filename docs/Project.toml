@@ -4,4 +4,4 @@ DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
 EasyHybrid = "61bb816a-e6af-4913-ab9e-91bff2e122e3"
 
 [sources]
-EasyHybrid = { path = ".." }
+EasyHybrid = {path = ".."}
