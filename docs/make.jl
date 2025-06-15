@@ -1,5 +1,5 @@
-using Documenter, DocumenterVitepress
 using EasyHybrid
+using Documenter, DocumenterVitepress
 
 makedocs(;
     modules=[EasyHybrid],
