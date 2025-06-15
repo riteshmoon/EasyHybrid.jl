@@ -11,10 +11,10 @@
 `EasyHybrid.jl` provides a simple and flexible framework for hybrid modeling, enabling the integration of neural networks with mechanistic (physics-based) models. This approach can be expressed as:
 
 $$
-\hat{y} = \mathcal{M}(\,h(\,x\,;\,\theta),\, z;\, \phi)
+\hat{y} = \mathcal{M}(h(x;\theta), z; \phi)
 $$
 
-where $\hat{y}$ denotes the predicted output of the hybrid model, $h(\,x;\,\theta)$ is a neural network with inputs $x$ and learnable parameters $\theta$, $z$ denotes additional inputs passed directly to the mechanistic model $\mathcal{M}(\cdot\,,\, z;\, \phi)$, which is parameterized by $\phi$. The parameters $\phi$ may be known from first principles or learned from data.
+where $\hat{y}$ denotes the predicted output of the hybrid model, $h(x;\theta)$ is a neural network with inputs $x$ and learnable parameters $\theta$, $z$ denotes additional inputs passed directly to the mechanistic model $\mathcal{M}(\cdot, z;\, \phi)$, which is parameterized by $\phi$. The parameters $\phi$ may be known from first principles or learned from data.
 
 
 ## Installation

@@ -84,7 +84,7 @@ export default defineConfig({
   themeConfig: {
     outline: 'deep',
     // https://vitepress.dev/reference/default-theme-config
-    logo: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
+    logo: { src: '/logo_sq.png', width: 24, height: 24},
     search: {
       provider: 'local',
       options: {
@@ -99,7 +99,7 @@ export default defineConfig({
     ],
     footer: {
       message: 'Made with <a href="https://luxdl.github.io/DocumenterVitepress.jl/stable/" target="_blank"><strong>DocumenterVitepress.jl</strong></a> <br>',
-      copyright: `© Copyright ${new Date().getUTCFullYear()}. Lazaro Alonso`
+      copyright: `© Copyright ${new Date().getUTCFullYear()}. Lazaro Alonso.`
     },
   }
 })
