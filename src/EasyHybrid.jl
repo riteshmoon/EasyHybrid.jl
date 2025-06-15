@@ -21,7 +21,12 @@ using NaNStatistics: nanmean
 using JLD2
 using StyledStrings
 using Printf
+using Reexport
 
+@reexport import LuxCore
+@reexport using Random
+
+include("macro_hybrid.jl")
 include("utils/wrap_tuples.jl")
 include("utils/io.jl")
 include("utils/tools.jl")

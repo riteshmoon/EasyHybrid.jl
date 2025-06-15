@@ -1,9 +1,26 @@
 # EasyHybrid.jl
 
-`EasyHybrid.jl` extends `Lux.jl` layers to define custom hybrid models. A complete definition follows the next steps:
+Simply do
 
-## Model struct
-Define your model as a sub-type of an `LuxCore.AbstractLuxContainerLayer`. Namely,
+```@example modelName
+using EasyHybrid
+@hybrid YourHybridModelName α
+# α is the newly introduced physical parameter to be learned!
+```
+
+see your new model definition by typing `?YourHybridModelName`.
+
+::: details you should see something like:
+
+```@example modelName
+@doc YourHybridModelName
+```
+:::
+
+
+::: details What is `@habrid` doing?
+
+Defines your model as a sub-type of an `LuxCore.AbstractLuxContainerLayer`. Namely,
 
 ```julia
 struct YourHybridModelName{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :forcing, :targets, :α)}
@@ -18,7 +35,7 @@ struct YourHybridModelName{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLay
 end
 ```
 
-## Initial parameters and states
+sets initial parameters and states
 
 ::: code-group
 
@@ -37,6 +54,12 @@ end
 ```
 
 :::
+
+````@docs
+@hybrid
+````
+
+Hence, after specifying the `physical parameters`, you only need to describe how this model operates.
 
 ## Definition
 Model definition, how does the actual model operates!
@@ -58,7 +81,12 @@ end
 ```
 
 ## Loss function
-Loss? what is your approach for optimization?
+
+We provide a generic loss function, if you need further adjustments then define a specific one for your hybrid model.
+
+::: details define a custom loss
+
+What is your approach for optimization?
 
 ```julia
 function lossfn(HM::YourHybridModelName, ds_p, (ds_t, ds_t_nan), ps, st)
@@ -74,3 +102,4 @@ function lossfn(HM::YourHybridModelName, ds_p, (ds_t, ds_t_nan), ps, st)
   return loss
 end
 ```
+:::
