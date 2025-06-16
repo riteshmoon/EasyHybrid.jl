@@ -13,13 +13,6 @@ using Statistics
 df_o = CSV.read(joinpath(@__DIR__, "./data/lucas_overlaid.csv"), DataFrame, normalizenames=true)
 println(size(df_o))
 
-coords = collect(zip(df_o.lat, df_o.lon))
-
-using Rasters
-
-zarr_path = "/Net/Groups/BGI/scratch/HYCO/npp.zarr/"
-data = Raster(zarr_path)
-
 # t clean covariates
 names_cov = Symbol.(names(df_o))[19:end]
 names_meta = Symbol.(names(df_o))[1:18]
