@@ -20,24 +20,23 @@ using Printf
 df = CSV.read("projects/RbQ10/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
 
 df[!, :Temp] = df[!, :Temp] .- 273.15 # convert to Celsius
-df_forcing = filter(:Respiration_heterotrophic => !isnan, df)
-# df_forcing = df
-ds_k = to_keyedArray(Float32.(df_forcing))
-yobs =  ds_k(:Respiration_heterotrophic)'[:,:]
+# df = filter(:Respiration_heterotrophic => !isnan, df)
+rename!(df, :Respiration_heterotrophic => :Rh)  # rename as in hybrid model
 
+ds_keyed = to_keyedArray(Float64.(df)) # predictors + forcing
+
+# Define neural network
 NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
-#? do different initial Q10s
-RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Temp,), 2.5f0) 
-
-data = (ds_k([:Rgpot, :Moist, :Temp]), yobs)
-
-(x_train, y_train), (x_val, y_val) = splitobs(data; at=0.8, shuffle=false)
-dataloader = DataLoader((x_train, y_train), batchsize=512, shuffle=true);
+# instantiate Hybrid Model
+RbQ10 = RespirationRbQ10(NN, (:Rgpot, :Moist), (:Rh, ), (:Temp,), 2.5f0) # ? do different initial Q10s
+# Define neural network
+NN = Lux.Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
 
 ps, st = LuxCore.setup(Random.default_rng(), RbQ10)
 
-ps_ca = ComponentArray(ps)
-smodel = StatefulLuxLayer{false}(RbQ10, nothing, st)
+using ComponentArrays
+ps_ca = ComponentArray(ps) .|> Float64
+# smodel = StatefulLuxLayer{false}(RbQ10, nothing, st)
 # deal with the `Rb` state also here, (; Rb, st), since this is the output from LuxCore.apply.
 # ! note that for now is set to `{false}`.
 
@@ -46,29 +45,52 @@ function callback(state, l)
     return l < 0.2 ## Terminate if loss is smaller than
 end
 
-function lossfn_optim(ps_ca, data)
-    ds, y = data
-    # ! unpack nan indices here as well
-    ŷ, _ = smodel(ds, ps_ca)
-    return Statistics.mean(abs2, ŷ .- y)
+function callback(state, l) #callback function to observe training
+    display(l)
+    return false
 end
 
-lossfn_optim(ps_ca, (ds_k, yobs))
 
-opt_func = OptimizationFunction(lossfn_optim, Optimization.AutoZygote())
+using Statistics
+
+# the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
+ds_p_f, ds_t = EasyHybrid.prepare_data(RbQ10, ds_keyed)
+ds_t_nan = .!isnan.(ds_t)
+ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st)
+
+ls2 = (p, data) -> lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), p, st)
+
+dta = (ds_p_f, ds_t, ds_t_nan)
+
+# TODO check if minibatching is doing what is supposed to do - ncycle was used before:
+# https://docs.sciml.ai/Optimization/stable/tutorials/minibatch/
+(x_train, y_train, nan_train), (x_val, y_val, nan_val) = splitobs(dta; at=0.8, shuffle=false)
+dataloader = DataLoader((x_train, y_train, nan_train), batchsize=512, shuffle=true);
+
+ls2(ps_ca, dta)
+
+opt_func = OptimizationFunction(ls2, Optimization.AutoZygote())
 opt_prob = OptimizationProblem(opt_func, ps_ca, dataloader)
 
-epochs = 25
-res_adam = solve(opt_prob, Optimisers.Adam(0.001); callback, epochs)
+epochs = 10
+n_minibatches = length(dataloader)
+function callback(state, l)
+    state.iter % n_minibatches == 1 && @printf "Epoch: %5d, Loss: %.6e\n" state.iter/n_minibatches+1 l
+    return l < 1e-8 ## Terminate if loss is small
+end
 
-# res_shopia = solve(opt_prob, Optimization.Sophia(); callback, maxiters=epochs)
+res_adam = solve(opt_prob, Optimisers.Adam(0.001); callback, epochs)
+ls2(res_adam.u, dta)
+
+opt_prob = remake(opt_prob; u0=res_adam.u)
+
+res_lbfgs = solve(opt_prob, Optimization.LBFGS(); callback, maxiters=1000)
+ls2(res_lbfgs.u, dta)
+
+
+#res_shopia = solve(opt_prob, Optimization.Sophia(); callback, maxiters=epochs)
 
 # ! finetune a bit with L-BFGS
 # ?  LBFGS needs to this `convert(Float64, res_adam.u)` which it fails!
 # ! but there is more, see issue: https://github.com/LuxDL/Lux.jl/issues/1260
 
-# using ForwardDiff
-# opt_func = OptimizationFunction(lossfn_optim, Optimization.AutoForwardDiff())
-# opt_prob2 = remake(opt_prob, u0=res_adam.u)
-opt_prob = OptimizationProblem(opt_func, res_adam.u, dataloader)
-res_lbfgs = solve(opt_prob, Optimization.LBFGS(); callback, maxiters=epochs)
