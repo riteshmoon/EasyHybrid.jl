@@ -16,7 +16,8 @@ using EasyHybrid.AxisKeys
 using Zygote
 using EasyHybrid.JLD2
 # data
-df_o = CSV.read("/Users/lalonso/Documents/HybridML/data/Rh_AliceHolt_forcing_filled.csv", DataFrame)
+df_o = CSV.read(joinpath(@__DIR__, "./data/Rh_AliceHolt_forcing_filled.csv"), DataFrame)
+
 # some pre-processing
 df = copy(df_o)
 df[!, :Temp] = df[!, :Temp] .- 273.15 # convert to Celsius
@@ -40,6 +41,11 @@ ds_p_f, ds_t = EasyHybrid.prepare_data(RbQ10, ds_keyed)
 ds_t_nan = .!isnan.(ds_t)
 ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss())
 
+ls_logs = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss(train_mode=false))
+
+# lossfn(HM::LuxCore.AbstractLuxContainerLayer, x, (y_t, y_nan), ps, st, logging::LoggingLoss2)
+
+
 # ? play with :Temp as predictors in NN, temperature sensitivity!
 # TODO: variance effect due to LSTM vs NN
 out = train(RbQ10, (ds_p_f, ds_t), (:Q10, ); nepochs=200, batchsize=512, opt=Adam(0.01));
@@ -57,10 +63,10 @@ physical_params, _ = load_group(output_file, "physical_params")
 series(WrappedTuples(physical_params); axis=(; xlabel = "epoch", ylabel=""))
 
 training_loss, _ = load_group(output_file, "training_loss")
-series(WrappedTuples(training_loss); axis=(; xlabel = "epoch", ylabel="training loss", xscale=log10, yscale=log10))
+series(WrappedTuples(WrappedTuples(training_loss).mse); axis=(; xlabel = "epoch", ylabel="training loss", xscale=log10, yscale=log10))
 
 validation_loss, _ = load_group(output_file, "validation_loss")
-series(WrappedTuples(validation_loss); axis=(; xlabel = "epoch", ylabel="validation loss", xscale=log10, yscale=log10))
+series(WrappedTuples(WrappedTuples(validation_loss).mse); axis=(; xlabel = "epoch", ylabel="validation loss", xscale=log10, yscale=log10))
 
 
 # load_group(output_file, "RespirationRbQ10")
