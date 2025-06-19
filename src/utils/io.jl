@@ -25,7 +25,7 @@ function save_ps_st!(file_name, hm, ps, st, save_ps, epoch)
     end
 
     jldopen(file_name, "a+") do file
-        file["$hm_name/epoch_$epoch"] = (ps, st)
+        file["HybridModel:$hm_name/epoch_$epoch"] = (ps, st)
         if !isempty(save_ps)
             file["physical_params/epoch_$epoch"] = tmp_e
         end

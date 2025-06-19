@@ -39,12 +39,9 @@ ps, st = LuxCore.setup(Random.default_rng(), RbQ10)
 # the Tuple `ds_p, ds_t` is later used for batching in the `dataloader`.
 ds_p_f, ds_t = EasyHybrid.prepare_data(RbQ10, ds_keyed)
 ds_t_nan = .!isnan.(ds_t)
-ls = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss())
+ls = EasyHybrid.lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss())
 
-ls_logs = lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss(train_mode=false))
-
-# lossfn(HM::LuxCore.AbstractLuxContainerLayer, x, (y_t, y_nan), ps, st, logging::LoggingLoss2)
-
+ls_logs = EasyHybrid.lossfn(RbQ10, ds_p_f, (ds_t, ds_t_nan), ps, st, LoggingLoss(train_mode=false))
 
 # ? play with :Temp as predictors in NN, temperature sensitivity!
 # TODO: variance effect due to LSTM vs NN
@@ -117,15 +114,15 @@ with_theme(theme_light()) do
     ax = Makie.Axis(fig[1,1], title = "Loss",
         yscale=log10, xscale=log10
         )
-    lines!(ax, out.train_history.sum, color=:orangered, label = "train")
-    lines!(ax, out.val_history.sum, color=:dodgerblue, label ="validation")
+    lines!(ax, WrappedTuples(out.train_history.mse).sum, color=:orangered, label = "train")
+    lines!(ax, WrappedTuples(out.val_history.mse).sum, color=:dodgerblue, label ="validation")
     # limits!(ax, 1, 1000, 0.04, 1)
     axislegend()
     fig
 end
 
 
-yobs_all =  ds_p_f(:Rh)
+yobs_all =  ds_keyed(:Rh)
 
 ŷ, RbQ10_st = LuxCore.apply(RbQ10, ds_p_f, out.ps, out.st)
 
