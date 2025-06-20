@@ -1,6 +1,6 @@
 using EasyHybrid
 using Test
-using Flux
+import Flux
 
 dk = gen_linear_data()
 dk_twos = gen_linear_data_2outputs()

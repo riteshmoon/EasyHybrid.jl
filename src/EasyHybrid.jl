@@ -5,7 +5,7 @@ EasyHybrid is a Julia package for hybrid machine learning models, combining neur
 """
 module EasyHybrid
 import LuxCore: LuxCore.setup, LuxCore.AbstractLuxContainerLayer
-using Flux
+import Flux
 using DataFrames
 using DataFrameMacros
 using Chain: @chain
@@ -27,9 +27,9 @@ using Printf
 using Reexport: @reexport
 
 @reexport begin
-    import Lux
     import LuxCore
     using Lux
+    using Lux: Dense, Chain, Dropout, relu
     using Random
     using Statistics
     using DataFrames
