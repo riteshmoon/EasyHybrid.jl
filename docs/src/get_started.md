@@ -73,7 +73,7 @@ function (hm::YourHybridModelName)(dataset_keyed, ps, st)
   # output from Neural network application 
   β, st = LuxCore.apply(hm.NN, p, ps.ps, st.st) # [!code highlight]
 
-  # equation! this is where were you should focus, your model!
+  # equation! this is where you should focus, your model!
   ŷ = β .* ps.α .^(0.1f0 * (x .- 15.0f0)) # [!code warning]
 
   return (; ŷ), (; β, st) # always output predictions and states as two tuples

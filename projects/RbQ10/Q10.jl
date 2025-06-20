@@ -49,16 +49,16 @@ output_file = joinpath(@__DIR__, "output_tmp/trained_model.jld2")
 
 all_groups = get_all_groups(output_file)
 
-predictions = load_group(output_file, "predictions")
+predictions = load_group(output_file, :predictions)
 
-physical_params, _ = load_group(output_file, "physical_params")
+physical_params, _ = load_group(output_file, :physical_params)
 
 series(WrappedTuples(physical_params); axis=(; xlabel = "epoch", ylabel=""))
 
-training_loss, _ = load_group(output_file, "training_loss")
+training_loss, _ = load_group(output_file, :training_loss)
 series(WrappedTuples(WrappedTuples(training_loss).mse); axis=(; xlabel = "epoch", ylabel="training loss", xscale=log10, yscale=log10))
 
-validation_loss, _ = load_group(output_file, "validation_loss")
+validation_loss, _ = load_group(output_file, :validation_loss)
 series(WrappedTuples(WrappedTuples(validation_loss).mse); axis=(; xlabel = "epoch", ylabel="validation loss", xscale=log10, yscale=log10))
 
 
