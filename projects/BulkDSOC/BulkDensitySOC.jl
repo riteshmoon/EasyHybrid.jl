@@ -5,6 +5,7 @@ Pkg.instantiate()
 
 using Revise
 using EasyHybrid
+using EasyHybrid.Lux
 # plotting
 using GLMakie
 using AlgebraOfGraphics

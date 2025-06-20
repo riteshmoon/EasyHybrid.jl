@@ -4,6 +4,7 @@ Pkg.develop(path=pwd())
 Pkg.instantiate()
 
 using EasyHybrid
+using EasyHybrid.Lux
 
 script_dir = @__DIR__
 include(joinpath(script_dir, "data", "prec_process_data.jl"))

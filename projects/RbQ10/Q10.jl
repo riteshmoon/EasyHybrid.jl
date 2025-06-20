@@ -6,6 +6,7 @@ Pkg.instantiate()
 
 # start using the package
 using EasyHybrid
+using EasyHybrid.Lux
 
 # for Plotting
 using GLMakie

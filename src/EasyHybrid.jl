@@ -29,7 +29,7 @@ using Reexport: @reexport
 @reexport begin
     import Lux
     import LuxCore
-    using Lux: Chain, Dense, Dropout, relu
+    using Lux
     using Random
     using Statistics
     using DataFrames

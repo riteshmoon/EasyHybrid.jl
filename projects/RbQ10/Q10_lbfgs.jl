@@ -4,6 +4,7 @@ Pkg.develop(path=pwd())
 Pkg.instantiate()
 
 using EasyHybrid
+using EasyHybrid.Lux
 using EasyHybrid.Printf
 using EasyHybrid.MLUtils
 
