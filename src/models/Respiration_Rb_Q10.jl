@@ -58,6 +58,6 @@ function (hm::RespirationRbQ10)(ds_k, ps, st::NamedTuple)
     #TODO output name flexible - could be R_soil, heterotrophic, autotrophic, etc.
     R_soil = mRbQ10(Rb, ps.Q10, x, 15.0f0) # ? should 15°C be the reference temperature also an input variable?
 
-    return (; R_soil), (; Rb, st)
+    return (; R_soil, Rb), (; st)
 end
 

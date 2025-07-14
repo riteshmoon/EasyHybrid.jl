@@ -54,5 +54,5 @@ function (hm::Rs_components)(ds_k, ps, st::NamedTuple)
 
     R_soil = R_het .+ R_root .+ R_myc
 
-    return (; R_soil, R_het, R_root, R_myc), (; Rb_het, Rb_root, Rb_myc, st)
+    return (; R_soil, R_het, R_root, R_myc), (; st)
 end
