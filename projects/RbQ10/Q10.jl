@@ -11,6 +11,10 @@ using EasyHybrid
 using GLMakie
 using AlgebraOfGraphics
 
+# Local Path (MPI-BGC server):
+#   /Net/Groups/BGI/scratch/bahrens/DataHeinemeyerRh/RESP_07_08_09_10_filled.csv
+# =============================================================================
+
 script_dir = @__DIR__
 include(joinpath(script_dir, "data", "prec_process_data.jl"))
 
