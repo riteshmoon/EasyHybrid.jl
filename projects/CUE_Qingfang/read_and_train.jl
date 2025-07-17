@@ -111,7 +111,7 @@ hybrid_model = constructHybridModel(
     scale_nn_outputs = true,
     hidden_layers    = [15, 15],
     activation       = sigmoid,
-    input_batchnorm  = true,
+    input_batchnorm  = true
 )
 
 out = train(
@@ -123,6 +123,9 @@ out = train(
     opt            = AdamW(0.01),
     loss_types     = [:mse, :nse],
     training_loss  = :nse,
+    yscale         = identity,
+    agg            = mean,
+    shuffleobs     = true
 )
 
 # =============================================================================
@@ -163,7 +166,7 @@ function CUE_Q10(; MAT, Growth, Respiration, Q10Growth, Q10Respiration)
     GrowthTemp      = Growth      .* fQ10(MAT, 15.f0, Q10Growth)
     RespirationTemp = Respiration .* fQ10(MAT, 15.f0, Q10Respiration)
     CUE = Growth ./ (Respiration .+ Growth)
-    return (; CUE, Growth, Respiration)
+    return (; CUE, Growth, Respiration, Q10Growth, Q10Respiration)
 end
 
 # -----------------------------------------------------------------------------
@@ -181,9 +184,9 @@ hybrid_model = constructHybridModel(
     neural_param_names,
     global_param_names;
     scale_nn_outputs = true,
-    hidden_layers    = [15, 15],
+    hidden_layers    = [16, 8],
     activation       = sigmoid,
-    input_batchnorm  = true,
+    input_batchnorm  = true
 )
 
 out = train(
@@ -195,4 +198,20 @@ out = train(
     opt            = AdamW(0.01),
     loss_types     = [:mse, :nse],
     training_loss  = :nse,
+    yscale         = identity,
+    agg            = mean,
+    shuffleobs     = true
 )
+
+θ_pred = out.val_obs_pred[!, Symbol(string(:CUE, "_pred"))]
+θ_obs = out.val_obs_pred[!, :CUE]
+EasyHybrid.poplot(θ_pred, θ_obs, "CUE")
+
+θ_pred = out.val_obs_pred[!, Symbol(string(:Growth, "_pred"))]
+θ_obs = out.val_obs_pred[!, :Growth]
+EasyHybrid.poplot(θ_pred, θ_obs, "Growth")
+
+θ_pred = out.val_obs_pred[!, Symbol(string(:Respiration, "_pred"))]
+θ_obs = out.val_obs_pred[!, :Respiration]
+EasyHybrid.poplot(θ_pred, θ_obs, "Respiration")
+
