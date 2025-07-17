@@ -19,6 +19,14 @@ Train a hybrid model using the provided data and save the training process to a 
 """
 function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0.01),
     file_name=nothing, loss_types=[:mse, :r2], training_loss=:mse, agg=sum, ps_st = nothing, random_seed=nothing)
+    #! check if the EasyHybridMakie extension is loaded.
+    ext = Base.get_extension(@__MODULE__, :EasyHybridMakie)
+    if ext === nothing
+        @warn "Makie extension not loaded no plots will be generated."
+    else
+        EasyHybrid.plot_loss(rand(10))
+    end
+
     data_ = prepare_data(hybridModel, data)
     # all the KeyedArray thing!
 

@@ -99,6 +99,13 @@ function EasyHybrid.plot_pred_vs_obs!(ax, pred, obs, title_prefix)
     Makie.axislegend(ax; position=:lt)
 end
 
+function EasyHybrid.plot_loss(loss)
+    fig = Makie.Figure()
+    ax = Makie.Axis(fig[1, 1])
+    lines!(ax, loss)
+    display(fig)
+end
+
 function __init__()
     @debug "setting theme_easy_hybrid"
     # hybrid_latex = merge(theme_easy_hybrid(), theme_latexfonts())
