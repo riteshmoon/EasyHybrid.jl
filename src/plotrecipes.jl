@@ -11,3 +11,6 @@ function plot_pred_vs_obs!()
 end
 
 function plot_loss end
+function plot_loss! end
+function to_obs end
+function to_point2f end

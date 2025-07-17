@@ -22,9 +22,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     #! check if the EasyHybridMakie extension is loaded.
     ext = Base.get_extension(@__MODULE__, :EasyHybridMakie)
     if ext === nothing
-        @warn "Makie extension not loaded no plots will be generated."
-    else
-        EasyHybrid.plot_loss(rand(10))
+        @warn "Makie extension not loaded, no plots will be generated."
     end
 
     data_ = prepare_data(hybridModel, data)
@@ -56,6 +54,15 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
 
     train_history = [l_init_train]
     val_history = [l_init_val]
+
+    train_h_obs = if !isnothing(ext)
+        l_value = getproperty(getproperty(l_init_train, training_loss), Symbol("$agg"))
+        p = EasyHybrid.to_point2f(0, l_value)
+        EasyHybrid.to_obs([p])
+    end
+    if !isnothing(ext)
+        EasyHybrid.plot_loss(train_h_obs)
+    end
     # track physical parameters
     ps_values_init = [copy(getproperty(ps, e)[1]) for e in save_ps]
     ps_init = NamedTuple{save_ps}(ps_values_init)
@@ -94,6 +101,13 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
         
         push!(train_history, l_train)
         push!(val_history, l_val)
+
+        if !isnothing(ext)
+            l_value = getproperty(getproperty(l_train, training_loss), Symbol("$agg"))
+            new_p = EasyHybrid.to_point2f(epoch, l_value)
+            push!(train_h_obs[], new_p)
+            notify(train_h_obs) 
+        end
 
         _headers, paddings = header_and_paddings(getproperty(l_init_train, training_loss))
 
