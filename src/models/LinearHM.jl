@@ -2,18 +2,18 @@
 export LinearHM
 
 """
-    LinearHM(NN, predictors, forcing, β)
+    LinearHM(NN, predictors, forcing, targets, β)
 
-A linear hybrid model with a neural network `NN`, `predictors` and `forcing` terms.
+A linear hybrid model with a neural network `NN`, `predictors`, `forcing` and `targets` terms.
 """
-struct LinearHM{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :targets, :forcing, :β)}
+struct LinearHM{D, T1, T2, T3, T4} <: LuxCore.AbstractLuxContainerLayer{(:NN, :predictors, :forcing, :targets, :β)}
     NN
     predictors
-    targets
     forcing
+    targets
     β
-    function LinearHM(NN::D, predictors::T1, targets::T2, forcing::T3, β::T4) where {D, T1, T2, T3, T4}
-        new{D, T1, T2, T3, T4}(NN, collect(predictors), collect(targets), collect(forcing), [β])
+    function LinearHM(NN::D, predictors::T1, forcing::T2, targets::T3, β::T4) where {D, T1, T2, T3, T4}
+        new{D, T1, T2, T3, T4}(NN, collect(predictors), collect(forcing), collect(targets), [β])
     end
 end
 

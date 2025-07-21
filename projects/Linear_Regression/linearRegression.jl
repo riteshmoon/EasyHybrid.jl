@@ -12,7 +12,7 @@ using AlgebraOfGraphics
 ds_k = gen_linear_data(; seed=123)
 
 NN = Chain(Dense(2, 15, Lux.relu), Dense(15, 15, Lux.relu), Dense(15, 1));
-lhm = LinearHM(NN, (:x1, :x2), (:obs,), (:x3,), 0.0f0)
+lhm = LinearHM(NN, (:x1, :x2), (:x3,), (:obs,), 0.0f0)
 
 out = train(lhm, ds_k, (:β, ); nepochs=2500, batchsize=100, opt=Adam(0.001));
 
