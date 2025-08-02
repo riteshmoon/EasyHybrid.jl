@@ -22,10 +22,6 @@ using EasyHybrid.DataFrameMacros
 using GLMakie, AlgebraOfGraphics
 using Chain: @chain as @c
 
-struct ExpoHybParams <: AbstractHybridModel 
-    hybrid::EasyHybrid.ParameterContainer
-end
-
 parameters = (
     #            default                  lower                     upper                description
     k      = ( 0.01f0,                  0.0f0,                   0.2f0 ),            # Exponent
@@ -36,7 +32,6 @@ targets = [:Resp_obs]
 forcings = [:T]
 predictors = (Resp0=[:SM],)
 
-parameter_container = build_parameters(parameters, ExpoHybParams)
 
 ### Create synthetic data: Resp = Resp0 * exp(k*T); Resp0 = f(SM)
 ##
@@ -66,11 +61,6 @@ global_param_names = [:k]
 # Parameter container for the mechanistic model
 # =============================================================================
 
-# Parameter structure for FluxPartModel
-struct ExpoHybParams <: AbstractHybridModel 
-    hybrid::EasyHybrid.ParameterContainer
-end
-##
 # =============================================================================
 # Mechanistic Model Definition
 # =============================================================================
@@ -98,7 +88,7 @@ hybrid_model = constructHybridModel(
     forcings,
     targets,
     Expo_resp_model,
-    parameter_container,
+    parameters,
     global_param_names,
     scale_nn_outputs=false, # TODO true also works with good lower and upper bounds
     hidden_layers = [16, 16],
@@ -106,7 +96,8 @@ hybrid_model = constructHybridModel(
     input_batchnorm = true
 )
 
-out =  train(hybrid_model, df, (:k,); nepochs=300, batchsize=64, opt=AdamW(0.01, (0.9, 0.999), 0.01), loss_types=[:mse, :nse], training_loss=:nse, random_seed=123, yscale = identity)
+out =  train(hybrid_model, df, (:k,); nepochs=300, batchsize=64, opt=AdamW(0.01, (0.9, 0.999), 0.01), loss_types=[:mse, :nse], training_loss=:nse, random_seed=123, yscale = identity, monitor_names=[:Resp0, :k])
+
 
 EasyHybrid.poplot(out)
 EasyHybrid.plot_loss(out)

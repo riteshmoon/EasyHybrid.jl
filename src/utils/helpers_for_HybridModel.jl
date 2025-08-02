@@ -4,13 +4,15 @@ function construct_dispatch_functions(f)
     function new_f end  # Create a new generic function
 
     println("constructing on KeyedArray function for $f")
-    function new_f(forcing_data::KeyedArray, parameter_container::AbstractHybridModel, forcing_names::Vector{Symbol})
+    function new_f(forcing_data::KeyedArray, parameters::NamedTuple, forcing_names::Vector{Symbol})
         forcing = unpack_keyedarray(forcing_data, forcing_names)
+        parameter_container = build_parameters(parameters, f)
         f(;forcing..., values(default(parameter_container))...)
     end
 
-    function new_f(forcing_data::DataFrame, parameter_container::AbstractHybridModel, forcing_names::Vector{Symbol})
+    function new_f(forcing_data::DataFrame, parameters::NamedTuple, forcing_names::Vector{Symbol})
         forcing = (; (name => forcing_data[!, name] for name in forcing_names)...)
+        parameter_container = build_parameters(parameters, f)
         f(;forcing..., values(default(parameter_container))...)
     end
 
@@ -39,6 +41,15 @@ function build_parameters(parameters::NamedTuple, f::DataType)
     return f(ca)
 end
 
+# the “core” build_parameters that knows how to turn a NamedTuple + a
+# subtype of AbstractHybridModel into an actual model instance:
+function build_parameters(params::NamedTuple, ::Type{P}) where {P<:AbstractHybridModel}
+    return P(EasyHybrid.ParameterContainer(params))
+end
+
+function build_parameters(params::NamedTuple, f::M) where {M<:Function}
+    return build_parameters(params, HybridParams{M})
+end
 """
     build_parameter_matrix(parameter_defaults_and_bounds::NamedTuple)
 
