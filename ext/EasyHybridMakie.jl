@@ -243,13 +243,17 @@ loss curves, and time‑series for additional monitored outputs.
 - `monitor_names`: Symbols of extra outputs to monitor
 """
 function EasyHybrid.train_board(
-    train_loss::Observable, val_loss::Observable,
-    train_preds::NamedTuple,  train_obs::NamedTuple,
-    val_preds::NamedTuple,    val_obs::NamedTuple,
-    train_monitor::NamedTuple, val_monitor::NamedTuple,
+    train_loss,
+    val_loss,
+    train_preds,
+    train_obs,
+    val_preds,
+    val_obs,
+    train_monitor,
+    val_monitor,
     yscale;
-    target_names::Vector{Symbol}=collect(keys(train_preds)),
-    monitor_names=collect(keys(train_monitor))
+    target_names,
+    monitor_names
 )
     n_targets  = length(target_names)
     n_monitors = length(monitor_names)
@@ -353,6 +357,75 @@ function EasyHybrid.train_board(
 
     Makie.display(fig; focus_on_show = true)
 end
+
+"""
+    update_plotting_observables(ext, train_h_obs, val_h_obs, train_preds, val_preds, train_monitor, val_monitor, hybridModel, x_train, x_val, ps, st, l_train, l_val, training_loss, agg, epoch, monitor_names)
+
+Update plotting observables during training if the Makie extension is loaded.
+"""
+function EasyHybrid.update_plotting_observables(
+    train_h_obs,
+    val_h_obs,
+    train_preds,
+    val_preds,
+    train_monitor,
+    val_monitor,
+    hybridModel,
+    x_train,
+    x_val,
+    ps,
+    st,
+    l_train,
+    l_val,
+    training_loss,
+    agg,
+    epoch,
+    monitor_names)
+    
+    l_value = getproperty(getproperty(l_train, training_loss), Symbol("$agg"))
+    new_p = Point2f(epoch, l_value)
+    push!(train_h_obs[], new_p)
+    notify(train_h_obs) 
+
+    l_value_val = getproperty(getproperty(l_val, training_loss), Symbol("$agg"))
+    new_p_val = Point2f(epoch, l_value_val)
+    push!(val_h_obs[], new_p_val)
+
+    ŷ_train = hybridModel(x_train, ps, LuxCore.testmode(st))[1]
+    ŷ_val = hybridModel(x_val, ps, LuxCore.testmode(st))[1]
+
+    target_names = hybridModel.targets
+    for t in target_names
+        # replace the array stored in the Observable:
+        train_preds[t][] = vec(getfield(ŷ_train, t))
+        val_preds[t][]   = vec(getfield(ŷ_val,   t))
+        # and notify Makie that it changed:
+        notify(train_preds[t])
+        notify(val_preds[t])
+    end
+
+    for m in monitor_names
+        v_tr = vec(getfield(ŷ_train, m))  
+        m_tr = vec(getfield(ŷ_train, m))
+    
+        if length(v_tr) > 1 
+            for q in [0.25, 0.5, 0.75]
+                push!(val_monitor[m][Symbol("q", string(Int(q*100)))][], Point2f(epoch, quantile(v_tr, q)))
+                push!(train_monitor[m][Symbol("q", string(Int(q*100)))][], Point2f(epoch, quantile(m_tr, q)))
+                notify(val_monitor[m][Symbol("q", string(Int(q*100)))]) 
+                notify(train_monitor[m][Symbol("q", string(Int(q*100)))]) 
+            end
+         else
+           push!(val_monitor[m][:scalar][], Point2f(epoch, v_tr[1]))
+           push!(train_monitor[m][:scalar][], Point2f(epoch, m_tr[1]))
+           notify(val_monitor[m][:scalar])
+           notify(train_monitor[m][:scalar])
+         end
+    end
+
+    notify(val_h_obs) 
+end
+
 
 # =============================================================================
 # Generic Dispatch Methods for Loss and Parameter Plotting
