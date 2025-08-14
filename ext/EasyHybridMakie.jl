@@ -227,8 +227,9 @@ end
                 train_preds, train_obs,
                 val_preds, val_obs,
                 train_monitor, val_monitor,
-                yscale, zoom_epochs;
-                target_names, monitor_names)
+                yscale, zoom_epochs,
+                target_names;
+                monitor_names)
 
 Create a live‑updating dashboard showing per‑target scatter plots for training and validation,
 loss curves, and time‑series for additional monitored outputs.
@@ -244,13 +245,18 @@ loss curves, and time‑series for additional monitored outputs.
 - `zoom_epochs`: Number of epochs to zoom in on loss curve
 """
 function EasyHybrid.train_board(
-    train_loss::Observable, val_loss::Observable,
-    train_preds::NamedTuple,  train_obs::NamedTuple,
-    val_preds::NamedTuple,    val_obs::NamedTuple,
-    train_monitor::NamedTuple, val_monitor::NamedTuple,
-    yscale, zoom_epochs;
-    target_names::Vector{Symbol}=collect(keys(train_preds)),
-    monitor_names=collect(keys(train_monitor)),
+    train_loss,
+    val_loss,
+    train_preds,
+    val_preds,
+    train_monitor,
+    val_monitor,
+    train_obs,
+    val_obs,
+    yscale,
+    target_names;
+    monitor_names,
+    zoom_epochs
 )
     n_targets  = length(target_names)
     n_monitors = length(monitor_names)
@@ -269,7 +275,7 @@ function EasyHybrid.train_board(
         p_tr = getfield(train_preds, t)
         o_tr = getfield(train_obs, t)
         Makie.scatter!(ax_tr, p_tr, o_tr; color = :grey25, alpha = 0.6, markersize = 6)
-        Makie.lines!(ax_tr, @lift(sort($o_tr)), @lift(sort($o_tr)); color = :black, linestyle = :dash)
+        Makie.lines!(ax_tr, sort(o_tr), sort(o_tr); color = :black, linestyle = :dash)
         on(p_tr) do _; autolimits!(ax_tr); end
 
         # Validation scatter plot
@@ -277,7 +283,7 @@ function EasyHybrid.train_board(
         p_val = getfield(val_preds, t)
         o_val = getfield(val_obs, t)
         Makie.scatter!(ax_val, p_val, o_val; color = :tomato, alpha = 0.6, markersize = 6)
-        Makie.lines!(ax_val, @lift(sort($o_val)), @lift(sort($o_val)); color = :black, linestyle = :dash)
+        Makie.lines!(ax_val, sort(o_val), sort(o_val); color = :black, linestyle = :dash)
         on(p_val) do _; autolimits!(ax_val); end
     end
 
@@ -354,6 +360,74 @@ function EasyHybrid.train_board(
 
     Makie.display(fig; focus_on_show = true)
 end
+
+"""
+    update_plotting_observables(ext, train_h_obs, val_h_obs, train_preds, val_preds, train_monitor, val_monitor, hybridModel, x_train, x_val, ps, st, l_train, l_val, training_loss, agg, epoch, monitor_names)
+
+Update plotting observables during training if the Makie extension is loaded.
+"""
+function EasyHybrid.update_plotting_observables(
+    train_h_obs,
+    val_h_obs,
+    train_preds,
+    val_preds,
+    train_monitor,
+    val_monitor,
+    l_train,
+    l_val,
+    training_loss,
+    agg,
+    current_ŷ_train,
+    current_ŷ_val,
+    target_names,
+    epoch;
+    monitor_names)
+    
+    l_value = getproperty(getproperty(l_train, training_loss), Symbol("$agg"))
+    new_p = Point2f(epoch, l_value)
+    push!(train_h_obs[], new_p)
+    notify(train_h_obs) 
+
+    l_value_val = getproperty(getproperty(l_val, training_loss), Symbol("$agg"))
+    new_p_val = Point2f(epoch, l_value_val)
+    push!(val_h_obs[], new_p_val)
+
+    for t in target_names
+        # replace the array stored in the Observable:
+        train_preds[t][] = vec(getfield(current_ŷ_train, t))
+        val_preds[t][]   = vec(getfield(current_ŷ_val,   t))
+        # and notify Makie that it changed:
+        notify(train_preds[t])
+        notify(val_preds[t])
+    end
+
+    if !isempty(monitor_names)
+        for m in monitor_names
+            v_tr = vec(getfield(current_ŷ_val, m))  # ? it was set to train before? bug?
+            m_tr = vec(getfield(current_ŷ_train, m))
+        
+            if length(v_tr) > 1 
+                for q in [0.25, 0.5, 0.75]
+                    push!(val_monitor[m][Symbol("q", string(Int(q*100)))][], Point2f(epoch, quantile(v_tr, q)))
+                    push!(train_monitor[m][Symbol("q", string(Int(q*100)))][], Point2f(epoch, quantile(m_tr, q)))
+                    notify(val_monitor[m][Symbol("q", string(Int(q*100)))]) 
+                    notify(train_monitor[m][Symbol("q", string(Int(q*100)))]) 
+                end
+            else
+            push!(val_monitor[m][:scalar][], Point2f(epoch, v_tr[1]))
+            push!(train_monitor[m][:scalar][], Point2f(epoch, m_tr[1]))
+            notify(val_monitor[m][:scalar])
+            notify(train_monitor[m][:scalar])
+            end
+        end
+    end
+    notify(val_h_obs)
+end
+
+EasyHybrid.dashboard_figure() = Makie.current_figure()
+EasyHybrid.record_history(args...; kargs...) = Makie.record(args...; backend=Makie.current_backend(), kargs...)
+EasyHybrid.recordframe!(io) = Makie.recordframe!(io)
+EasyHybrid.save_fig(args...) = Makie.save(args...)
 
 # =============================================================================
 # Generic Dispatch Methods for Loss and Parameter Plotting
