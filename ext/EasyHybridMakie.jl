@@ -253,9 +253,10 @@ function EasyHybrid.train_board(
     val_monitor,
     train_obs,
     val_obs,
-    yscale, zoom_epochs,
+    yscale,
     target_names;
     monitor_names,
+    zoom_epochs
 )
     n_targets  = length(target_names)
     n_monitors = length(monitor_names)
