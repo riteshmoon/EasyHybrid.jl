@@ -71,10 +71,8 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     is_no_nan_t = .!isnan.(y_train)
     is_no_nan_v = .!isnan.(y_val)
 
-  l_init_train, _, init_ŷ_train = lossfn(hybridModel, x_train, (y_train, is_no_nan_t), ps, LuxCore.testmode(st),
-        LoggingLoss(train_mode=false, loss_types=loss_types, training_loss=training_loss, agg=agg))
-    l_init_val, _, init_ŷ_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, LuxCore.testmode(st),
-        LoggingLoss(train_mode=false, loss_types=loss_types, training_loss=training_loss, agg=agg))
+    l_init_train, _, init_ŷ_train =  evaluate_acc(hybridModel, x_train, y_train, is_no_nan_t, ps, st, loss_types, training_loss, agg)
+    l_init_val, _, init_ŷ_val = evaluate_acc(hybridModel, x_val, y_val, is_no_nan_v, ps, st, loss_types, training_loss, agg)
 
     train_history = [l_init_train]
     val_history = [l_init_val]
@@ -138,11 +136,9 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
         ps_values = [copy(getproperty(ps, e)[1]) for e in save_ps]
         tmp_e = NamedTuple{save_ps}(ps_values)
         push!(ps_history, tmp_e)
-
-        l_train, _, current_ŷ_train = lossfn(hybridModel, x_train,  (y_train, is_no_nan_t), ps, LuxCore.testmode(st),
-            LoggingLoss(train_mode=false, loss_types=loss_types, training_loss=training_loss, agg=agg))
-        l_val, _, current_ŷ_val = lossfn(hybridModel, x_val, (y_val, is_no_nan_v), ps, LuxCore.testmode(st),
-            LoggingLoss(train_mode=false, loss_types=loss_types, training_loss=training_loss, agg=agg))
+        
+        l_train, _, current_ŷ_train = evaluate_acc(hybridModel, x_train, y_train, is_no_nan_t, ps, st, loss_types, training_loss, agg)
+        l_val, _, current_ŷ_val = evaluate_acc(hybridModel, x_val, y_val, is_no_nan_v, ps, st, loss_types, training_loss, agg)
 
         save_train_val_loss!(file_name, l_train, "training_loss", epoch)
         save_train_val_loss!(file_name, l_val, "validation_loss", epoch)
@@ -251,6 +247,12 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     )
 end
 
+function evaluate_acc(ghm, x, y, y_no_nan, ps, st, loss_types, training_loss, agg)
+    loss_val, sts, ŷ = lossfn(ghm, x, (y, y_no_nan), ps, LuxCore.testmode(st),
+        LoggingLoss(train_mode=false, loss_types=loss_types, training_loss=training_loss, agg=agg)
+        )
+    return loss_val, sts, ŷ
+end
 
 function styled_values(nt; digits=5, color=nothing, paddings=nothing)
     formatted = [
