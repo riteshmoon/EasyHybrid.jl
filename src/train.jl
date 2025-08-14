@@ -40,8 +40,8 @@ Train a hybrid model using the provided data and save the training process to a 
 - `return_model`: The model to return: `:best` for the best model, `:final` for the final model (default: `:best`).
 """
 function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0.01), patience=typemax(Int),
-    file_name=nothing, loss_types=[:mse, :r2], training_loss=:mse, agg=sum, train_from = nothing, 
-    random_seed=nothing, shuffleobs = false, yscale=log10, monitor_names=[], return_model=:best)
+    file_name=nothing, loss_types=[:mse, :r2], training_loss=:mse, agg=sum, train_from=nothing,
+    random_seed=nothing, shuffleobs=false, yscale=log10, monitor_names=[], return_model=:best)
     #! check if the EasyHybridMakie extension is loaded.
     ext = Base.get_extension(@__MODULE__, :EasyHybridMakie)
     if ext === nothing
@@ -79,13 +79,23 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     train_history = [l_init_train]
     val_history = [l_init_val]
     target_names = hybridModel.targets
-    # monitor_names= !isempty(train_monitor) ? collect(keys(train_monitor))
 
     # Initialize plotting observables if extension is loaded
     if !isnothing(ext)
-        init_obs = initialize_plotting_observables(hybridModel, x_train, y_train, x_val, y_val, l_init_train, l_init_val, training_loss, agg, monitor_names, ps, st)
+        init_observables, fixed_observations = initialize_plotting_observables(
+            init_ŷ_train,
+            init_ŷ_val,
+            y_train,
+            y_val,
+            l_init_train,
+            l_init_val,
+            training_loss,
+            agg,
+            target_names;
+            monitor_names
+            )
         # Launch dashboard if extension is loaded
-        EasyHybrid.train_board(init_obs..., yscale; target_names, monitor_names)
+        EasyHybrid.train_board(init_observables..., fixed_observations..., yscale, target_names; monitor_names)
     end
 
     # track physical parameters
@@ -141,25 +151,17 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
         push!(val_history, l_val)
 
         # Update plotting observables if extension is loaded
-        # train_h_obs, val_h_obs, train_preds, train_obs, val_preds, val_obs, train_monitor, val_monitor
         if !isnothing(ext)
             EasyHybrid.update_plotting_observables(
-                init_obs.train_h_obs,
-                init_obs.val_h_obs,
-                init_obs.train_preds,
-                init_obs.val_preds,
-                init_obs.train_monitor,
-                init_obs.val_monitor,
-                hybridModel,
-                x_train,
-                x_val,
-                ps,
-                st,
+                init_observables...,
                 l_train,
                 l_val,
                 training_loss,
                 agg,
-                epoch,
+                current_ŷ_train,
+                current_ŷ_val,
+                target_names,
+                epoch;
                 monitor_names)
         end
 
@@ -215,7 +217,6 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     save_predictions!(file_name, ŷ_val, αst_val, "validation")
 
     # training
-    target_names = hybridModel.targets
     save_observations!(file_name, target_names, y_train, "training")
     save_observations!(file_name, target_names, y_val, "validation")
     # save split obs (targets)

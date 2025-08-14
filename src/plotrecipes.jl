@@ -41,12 +41,11 @@ function update_plotting_observables end
 
 
 """
-    initialize_plotting_observables(ext, hybridModel, x_train, y_train, x_val, y_val, l_init_train, l_init_val, training_loss, agg, monitor_names, ps, st)
+    initialize_plotting_observables(init_ŷ_train, init_ŷ_val, y_train, y_val, l_init_train, l_init_val, training_loss, agg, monitor_names, target_names)
 
 Initialize plotting observables for training visualization if the Makie extension is loaded.
 """
-function initialize_plotting_observables(hybridModel, x_train, y_train, x_val, y_val, l_init_train, l_init_val, training_loss, agg, monitor_names, ps, st)
-    target_names = hybridModel.targets
+function initialize_plotting_observables(init_ŷ_train, init_ŷ_val, y_train, y_val, l_init_train, l_init_val, training_loss, agg, target_names; monitor_names)
 
     # Initialize loss history observables
     l_value = getproperty(getproperty(l_init_train, training_loss), Symbol("$agg"))
@@ -57,29 +56,28 @@ function initialize_plotting_observables(hybridModel, x_train, y_train, x_val, y
     p_val = EasyHybrid.to_point2f(0, l_value_val)
     val_h_obs = EasyHybrid.to_obs([p_val])
 
-    # Initial predictions for scatter plot obs versus model
-    ŷ_train = hybridModel(x_train, ps, LuxCore.testmode(st))[1]
-    ŷ_val = hybridModel(x_val, ps, LuxCore.testmode(st))[1]
-
     # build NamedTuples of Observables for preds and obs
-    train_preds = to_obs_tuple(ŷ_train, target_names)
-    val_preds   = to_obs_tuple(ŷ_val, target_names)
-    train_obs   = to_obs_tuple(y_train, target_names)
-    val_obs     = to_obs_tuple(y_val, target_names)
+    train_preds = to_obs_tuple(init_ŷ_train, target_names)
+    val_preds   = to_obs_tuple(init_ŷ_val, target_names)
+    train_obs   = to_tuple(y_train, target_names)
+    val_obs     = to_tuple(y_val, target_names)
 
     # --- monitored parameters/state as Observables ---
-    train_monitor = monitor_to_obs(ŷ_train, monitor_names)
-    val_monitor =  monitor_to_obs(ŷ_val, monitor_names)
+    train_monitor = !isempty(monitor_names) ? monitor_to_obs(init_ŷ_train, monitor_names) : nothing
+    val_monitor =  !isempty(monitor_names) ? monitor_to_obs(init_ŷ_val, monitor_names) : nothing
 
-    return (; train_h_obs, val_h_obs, train_preds, train_obs, val_preds, val_obs, train_monitor, val_monitor)
+    observables  = (; train_h_obs, val_h_obs, train_preds, val_preds, train_monitor, val_monitor)
+    observations = (; train_obs, val_obs) # observations
+
+    return (; observables, observations)
 end
 
 function to_obs_tuple(y, target_names)
     return (; (t => EasyHybrid.to_obs(vec(getfield(y, t))) for t in target_names)...)
 end
 
-function to_obs_tuple(y::KeyedArray, target_names)
-    return (; (t => EasyHybrid.to_obs(y(t)) for t in target_names)...)
+function to_tuple(y::KeyedArray, target_names)
+    return (; (t => y(t) for t in target_names)...) # observations are fixed, no Observables are needed!
 end
 
 function monitor_to_obs(ŷ, monitor_names; cuts = (0.25, 0.5, 0.75))
