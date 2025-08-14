@@ -38,7 +38,10 @@ function plot_loss end
 function to_obs end
 function to_point2f end
 function update_plotting_observables end
-
+function record_history end
+function dashboard_figure end
+function recordframe! end
+function save_fig end
 
 """
     initialize_plotting_observables(init_ŷ_train, init_ŷ_val, y_train, y_val, l_init_train, l_init_val, training_loss, agg, monitor_names, target_names)
@@ -85,14 +88,10 @@ function monitor_to_obs(ŷ, monitor_names; cuts = (0.25, 0.5, 0.75))
         m => begin
             v = vec(getfield(ŷ, m))
             if length(v) > 1
-                qx_ = Symbol("q$(Int(q*100))")
-                point_ = [EasyHybrid.to_point2f(0, quantile(v, q))]
-                # return
-                (; (qx_ => EasyHybrid.to_obs(point_) for q in cuts)...)
+                (; (qx_ = Symbol("q$(Int(q*100))") => EasyHybrid.to_obs([EasyHybrid.to_point2f(0, quantile(v, q))])
+                    for q in cuts)...)
             else
-                point_ = [EasyHybrid.to_point2f(0, v[1])]
-                # return
-                (; :scalar => EasyHybrid.to_obs(point_))
+                (; :scalar => EasyHybrid.to_obs([EasyHybrid.to_point2f(0, v[1])]))
             end
         end for m in monitor_names)...)
 end

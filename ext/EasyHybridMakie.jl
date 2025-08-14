@@ -419,9 +419,13 @@ function EasyHybrid.update_plotting_observables(
             end
         end
     end
-    notify(val_h_obs) 
+    notify(val_h_obs)
 end
 
+EasyHybrid.dashboard_figure() = Makie.current_figure()
+EasyHybrid.record_history(args...; kargs...) = Makie.record(args...; backend=Makie.current_backend(), kargs...)
+EasyHybrid.recordframe!(io) = Makie.recordframe!(io)
+EasyHybrid.save_fig(args...) = Makie.save(args...)
 
 # =============================================================================
 # Generic Dispatch Methods for Loss and Parameter Plotting

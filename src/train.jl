@@ -77,7 +77,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     train_history = [l_init_train]
     val_history = [l_init_val]
     target_names = hybridModel.targets
-
+    fig = nothing
     # Initialize plotting observables if extension is loaded
     if !isnothing(ext)
         init_observables, fixed_observations = initialize_plotting_observables(
@@ -94,6 +94,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
             )
         # Launch dashboard if extension is loaded
         EasyHybrid.train_board(init_observables..., fixed_observations..., yscale, target_names; monitor_names)
+        fig = EasyHybrid.dashboard_figure()
     end
 
     # track physical parameters
@@ -118,78 +119,94 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     save_train_val_loss!(file_name,l_init_train, "training_loss", 0)
     save_train_val_loss!(file_name,l_init_val, "validation_loss", 0)
 
+    # save/record
+    tmp_folder = mkpath(joinpath(dirname(Base.active_project()), "output_tmp"))
+
     prog = Progress(nepochs, desc="Training loss")
-    for epoch in 1:nepochs
-        for (x, y) in train_loader
-            # ? check NaN indices before going forward, and pass filtered `x, y`.
-            is_no_nan = .!isnan.(y)
-            if length(is_no_nan)>0 # ! be careful here, multivariate needs fine tuning
-                l, backtrace = Zygote.pullback((ps) -> lossfn(hybridModel, x, (y, is_no_nan), ps, st,
-                    LoggingLoss(training_loss=training_loss, agg=agg)), ps)
-                grads = backtrace(l)[1]
-                Optimisers.update!(opt_state, ps, grads)
-                st =(; l[2].st...)
+    maybe_record_history(!isnothing(ext), fig, joinpath(tmp_folder, "training_history.mp4"); framerate=24) do io
+        for epoch in 1:nepochs
+            for (x, y) in train_loader
+                # ? check NaN indices before going forward, and pass filtered `x, y`.
+                is_no_nan = .!isnan.(y)
+                if length(is_no_nan)>0 # ! be careful here, multivariate needs fine tuning
+                    l, backtrace = Zygote.pullback((ps) -> lossfn(hybridModel, x, (y, is_no_nan), ps, st,
+                        LoggingLoss(training_loss=training_loss, agg=agg)), ps)
+                    grads = backtrace(l)[1]
+                    Optimisers.update!(opt_state, ps, grads)
+                    st =(; l[2].st...)
+                end
             end
+            save_ps_st!(file_name, hybridModel, ps, st, save_ps, epoch)
+
+            ps_values = [copy(getproperty(ps, e)[1]) for e in save_ps]
+            tmp_e = NamedTuple{save_ps}(ps_values)
+            push!(ps_history, tmp_e)
+            
+            l_train, _, current_ŷ_train = evaluate_acc(hybridModel, x_train, y_train, is_no_nan_t, ps, st, loss_types, training_loss, agg)
+            l_val, _, current_ŷ_val = evaluate_acc(hybridModel, x_val, y_val, is_no_nan_v, ps, st, loss_types, training_loss, agg)
+
+            save_train_val_loss!(file_name, l_train, "training_loss", epoch)
+            save_train_val_loss!(file_name, l_val, "validation_loss", epoch)
+            
+            push!(train_history, l_train)
+            push!(val_history, l_val)
+
+            # Update plotting observables if extension is loaded
+            if !isnothing(ext)
+                EasyHybrid.update_plotting_observables(
+                    init_observables...,
+                    l_train,
+                    l_val,
+                    training_loss,
+                    agg,
+                    current_ŷ_train,
+                    current_ŷ_val,
+                    target_names,
+                    epoch;
+                    monitor_names)
+                # record a new frame
+                EasyHybrid.recordframe!(io)
+            end
+
+            current_agg_loss = getproperty(l_val[1], Symbol(agg))
+            
+            if current_agg_loss < best_agg_loss
+                best_agg_loss = current_agg_loss
+                best_ps = deepcopy(ps)
+                best_st = deepcopy(st)
+                cnt_patience = 0
+                best_epoch = epoch
+            else
+                cnt_patience += 1
+            end
+            if cnt_patience >= patience
+                metric_name = first(keys(l_val))
+                if !isnothing(ext)
+                    img_name = joinpath(tmp_folder, "train_history_best_epoch_$(best_epoch).png")
+                    EasyHybrid.save_fig(img_name, EasyHybrid.dashboard_figure())
+                end
+                @info "Early stopping at epoch $epoch with best validation loss wrt $metric_name: $best_agg_loss"
+                break
+            end
+
+            if !isnothing(ext) && epoch == nepochs
+                img_name = joinpath(tmp_folder, "train_history_best_epoch_$(best_epoch).png")
+                EasyHybrid.save_fig(img_name, EasyHybrid.dashboard_figure())
+            end
+
+            _headers, paddings = header_and_paddings(getproperty(l_init_train, training_loss))
+
+            next!(prog; showvalues = [
+                ("epoch ", epoch),
+                ("targets ", join(_headers, "  ")),
+                (styled"{red:training-start }", styled_values(getproperty(l_init_train, training_loss); paddings)),
+                (styled"{bright_red:current }", styled_values(getproperty(l_train, training_loss); color=:bright_red, paddings)),
+                (styled"{cyan:validation-start }", styled_values(getproperty(l_init_val, training_loss); paddings)),
+                (styled"{bright_cyan:current }", styled_values(getproperty(l_val, training_loss); color=:bright_cyan, paddings)),
+                ]
+                )
+                # TODO: log metrics
         end
-        save_ps_st!(file_name, hybridModel, ps, st, save_ps, epoch)
-
-        ps_values = [copy(getproperty(ps, e)[1]) for e in save_ps]
-        tmp_e = NamedTuple{save_ps}(ps_values)
-        push!(ps_history, tmp_e)
-        
-        l_train, _, current_ŷ_train = evaluate_acc(hybridModel, x_train, y_train, is_no_nan_t, ps, st, loss_types, training_loss, agg)
-        l_val, _, current_ŷ_val = evaluate_acc(hybridModel, x_val, y_val, is_no_nan_v, ps, st, loss_types, training_loss, agg)
-
-        save_train_val_loss!(file_name, l_train, "training_loss", epoch)
-        save_train_val_loss!(file_name, l_val, "validation_loss", epoch)
-        
-        push!(train_history, l_train)
-        push!(val_history, l_val)
-
-        # Update plotting observables if extension is loaded
-        if !isnothing(ext)
-            EasyHybrid.update_plotting_observables(
-                init_observables...,
-                l_train,
-                l_val,
-                training_loss,
-                agg,
-                current_ŷ_train,
-                current_ŷ_val,
-                target_names,
-                epoch;
-                monitor_names)
-        end
-
-        current_agg_loss = getproperty(l_val[1], Symbol(agg))
-        
-        if current_agg_loss < best_agg_loss
-            best_agg_loss = current_agg_loss
-            best_ps = deepcopy(ps)
-            best_st = deepcopy(st)
-            cnt_patience = 0
-            best_epoch = epoch
-        else
-            cnt_patience += 1
-        end
-        if cnt_patience >= patience
-            metric_name = first(keys(l_val))
-            @info "Early stopping at epoch $epoch with best validation loss wrt $metric_name: $best_agg_loss"
-            break
-        end
-
-        _headers, paddings = header_and_paddings(getproperty(l_init_train, training_loss))
-
-        next!(prog; showvalues = [
-            ("epoch ", epoch),
-            ("targets ", join(_headers, "  ")),
-            (styled"{red:training-start }", styled_values(getproperty(l_init_train, training_loss); paddings)),
-            (styled"{bright_red:current }", styled_values(getproperty(l_train, training_loss); color=:bright_red, paddings)),
-            (styled"{cyan:validation-start }", styled_values(getproperty(l_init_val, training_loss); paddings)),
-            (styled"{bright_cyan:current }", styled_values(getproperty(l_val, training_loss); color=:bright_cyan, paddings)),
-            ]
-            )
-            # TODO: log metrics
     end
 
     train_history = WrappedTuples(train_history)
@@ -253,6 +270,16 @@ function evaluate_acc(ghm, x, y, y_no_nan, ps, st, loss_types, training_loss, ag
         )
     return loss_val, sts, ŷ
 end
+function maybe_record_history(block, should_record, fig, output_path; framerate=24)
+    if should_record
+        EasyHybrid.record_history(fig, output_path; framerate=framerate) do io
+            block(io)
+        end
+    else
+        block(nothing)  # call with dummy io
+    end
+end
+    
 
 function styled_values(nt; digits=5, color=nothing, paddings=nothing)
     formatted = [
