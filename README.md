@@ -9,7 +9,7 @@
 > [!CAUTION]
 > Work in progress
 
-`EasyHybrid.jl` provides a simple and flexible framework for hybrid modeling, enabling the integration of neural networks with mechanistic (physics-based) models. This approach can be expressed as:
+`EasyHybrid.jl` provides a simple and flexible framework for hybrid modeling, enabling the integration of neural networks with process-based models. This approach can be expressed as:
 
 $$
 \hat{y} = \mathcal{M}(h(x;\theta), z; \phi)
@@ -145,3 +145,11 @@ out.train_diffs.Q10
 ## More Examples
 
 Check out the `projects/` directory for additional examples and use cases. Each project demonstrates different aspects of hybrid modeling with EasyHybrid.
+
+## Acknowledgments & Funding
+
+This work is part of the **[AI4SoilHealth](https://AI4SoilHealth.eu)** project, funded by the **European Union's Horizon Europe Research and Innovation Programme** under **Grant Agreement [No. 101086179](https://cordis.europa.eu/project/id/101086179)**.
+
+*Funded by the European Union. The views expressed are those of the authors and do not necessarily reflect those of the European Union or the European Research Executive Agency.*
+
+---
