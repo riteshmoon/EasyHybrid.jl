@@ -366,9 +366,7 @@ function EasyHybrid.train_board(
         end
         
     end
-
-    # Makie.colsize!(fig.layout, 1, Auto(0.5))
-    Makie.display(fig; focus_on_show = true)
+    display(fig)
 end
 
 """
@@ -703,7 +701,7 @@ function __init__()
     @debug "setting theme_easy_hybrid"
     # hybrid_latex = merge(theme_easy_hybrid(), theme_latexfonts())
     hybrid_latex = theme_easy_hybrid()
-    set_theme!(hybrid_latex)
+    set_theme!(hybrid_latex, GLMakie=(title="EasyHybrid.jl", focus_on_show = true))
 end
 
 end

@@ -93,7 +93,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
             monitor_names
             )
         zoom_epochs = min(patience, 50)
-        # Launch dashboard if extension is loaded
+        # ! Launch dashboard if extension is loaded
         EasyHybrid.train_board(init_observables..., fixed_observations..., yscale, target_names; monitor_names, zoom_epochs)
         fig = EasyHybrid.dashboard_figure()
     end
@@ -224,6 +224,7 @@ function train(hybridModel, data, save_ps; nepochs=200, batchsize=10, opt=Adam(0
     else
         @warn "Invalid return_model: $return_model. Returning final model."
     end
+    @info "Check the saved output (.png, .mp4, .jld2) from training at: $(tmp_folder)"
 
     ŷ_train, αst_train = hybridModel(x_train, ps, LuxCore.testmode(st))
     ŷ_val, αst_val = hybridModel(x_val, ps, LuxCore.testmode(st))
