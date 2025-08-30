@@ -14,7 +14,7 @@ authors:
 <Authors />
 ```
 
-# Getting Started
+# Hyperparameter tuning with Hyperopt.jl
 
 
 ### 1. Setup and Data Loading
@@ -138,7 +138,7 @@ EasyHybrid provides built-in hyperparameter tuning capabilities to optimize your
 
 ### Basic Hyperparameter Tuning
 
-You can use the `tune` function to automatically search for optimal hyperparameters:
+You can use the `tune` function to automatically search for optimal hyperparameters. Check [Hyperopt.jl](https://github.com/baggepinnen/Hyperopt.jl) for details on algorithms.
 
 ```@example hyperparameter_tuning
 # Create empty model specification for tuning
