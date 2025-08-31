@@ -314,11 +314,17 @@ function EasyHybrid.train_board(
         o_tr = getfield(train_obs, t)
 
         maxpoints = 10_000
-        if length(o_tr) > maxpoints
-            idx = rand(1:length(o_tr), maxpoints)
-            p_tr = @lift($p_tr[idx])
-            o_tr = o_tr[idx]
+        idx = @lift begin #TODO better with density plot?
+            n = length($p_tr)
+            if n > maxpoints
+                randperm(n)[1:maxpoints]
+            else
+                1:n
+            end
         end
+
+        p_tr_sub = @lift($p_tr[$idx])   # Observable
+        o_tr_sub = @lift(o_tr[$idx])    # o_val captured as constant
 
         mn, mx = extrema(filter(!isnan, o_tr))
         δd = 0.1
@@ -330,7 +336,7 @@ function EasyHybrid.train_board(
         Box(gd_tm[i][1, 1:2, Top()]; color=(:grey25, 0.1), strokevisible=false)
         Label(gd_tm[i][1, 1:2, Top()], "$(t)")
 
-        Makie.scatter!(ax_tr, p_tr, o_tr; color = :grey25, alpha = 0.6, markersize = 6)
+        Makie.scatter!(ax_tr, p_tr_sub, o_tr_sub; color = :grey25, alpha = 0.6, markersize = 6)
         Makie.lines!(ax_tr, sort(o_tr), sort(o_tr); color = :black, linestyle = :dash)
         # Validation scatter plot
         ax_val = Makie.Axis(gd_tm[i][1, 2]; aspect = 1, xlabel="Predicted", ylabel = "",
@@ -341,13 +347,19 @@ function EasyHybrid.train_board(
         p_val = getfield(val_preds, t)
         o_val = getfield(val_obs, t)
         
-        if length(o_val) > maxpoints
-            idx = rand(1:length(o_val), maxpoints)
-            p_val = @lift($p_val[idx])
-            o_val = o_val[idx]
+        val_idx = @lift begin
+            n = length($p_val)
+            if n > maxpoints
+                randperm(n)[1:maxpoints]
+            else
+                1:n
+            end
         end
 
-        Makie.scatter!(ax_val, p_val, o_val; color = :tomato, alpha = 0.6, markersize = 6)
+        p_val_sub = @lift($p_val[$val_idx])   # Observable
+        o_val_sub = @lift(o_val[$val_idx])
+
+        Makie.scatter!(ax_val, p_val_sub, o_val_sub; color = :tomato, alpha = 0.6, markersize = 6)
         Makie.lines!(ax_val, sort(o_val), sort(o_val); color = :black, linestyle = :dash)
     end
     Label(gd_tm[1][1:end, 0], "Observed", tellheight=false, rotation=pi/2)
