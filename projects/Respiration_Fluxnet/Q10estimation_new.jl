@@ -26,9 +26,14 @@ include("Data/load_data.jl")
 
 fluxnet_data = load_fluxnet_nc(joinpath(project_path, "Data", "data20240123", "US-SRG.nc"), timevar="date")
 
-fluxnet_data.timeseries.dayofyear = dayofyear.(fluxnet_data.timeseries.time)
-fluxnet_data.timeseries.sine_dayofyear = sin.(fluxnet_data.timeseries.dayofyear)
-fluxnet_data.timeseries.cos_dayofyear = cos.(fluxnet_data.timeseries.dayofyear)
+# fluxnet_data.timeseries.dayofyear = dayofyear.(fluxnet_data.timeseries.time)
+# fluxnet_data.timeseries.sine_dayofyear = sin.(fluxnet_data.timeseries.dayofyear)
+# fluxnet_data.timeseries.cos_dayofyear = cos.(fluxnet_data.timeseries.dayofyear)
+
+df.dayofyear = dayofyear.(df.time)
+df.sine_dayofyear = sin.(df.dayofyear)
+df.cos_dayofyear = cos.(df.dayofyear)
+
 
 # explore data structure
 println(names(fluxnet_data.timeseries))
