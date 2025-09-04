@@ -23,8 +23,8 @@ include("Data/load_data.jl")
 # or adjust the path to /Net/Groups/BGI/work_4/scratch/jnelson/4Sinikka/data20240123 + FluxNetSite
 
 site = "US-SRG"
-
-fluxnet_data = load_fluxnet_nc(joinpath(project_path, "Data", "data20240123", "$site.nc"), timevar="date")
+data_dir = "/ptmp/mp002/ellis/DataEasyHybrid/data20240123"
+fluxnet_data = load_fluxnet_nc(joinpath(data_dir, "$site.nc"), timevar="date")
 
 # explore data structure
 println(names(fluxnet_data.timeseries))
@@ -72,13 +72,16 @@ parameters = (
     Q10      = ( 1.5f0,                  1.0f0,                   4.0f0 ),            # Temperature sensitivity factor [-]
 )
 
+
+
+
 # =============================================================================
 # Hybrid Model Creation
 # =============================================================================
 target_FluxPartModel = [:NEE]
 forcing_FluxPartModel = [:SW_IN, :TA]
 
-predictors = (Rb = [:SWC_shallow, :P, :WS, :cos_dayofyear, :sin_dayofyear], 
+predictors = (Rb = [:SWC_shallow, :P, :WS, :cos_dayofyear, :sine_dayofyear], 
               RUE = [:TA, :P, :WS, :SWC_shallow, :VPD, :SW_IN_POT, :dSW_IN_POT, :dSW_IN_POT_DAY])
 
 global_param_names = [:Q10]
@@ -101,9 +104,6 @@ hybrid_model = constructHybridModel(
 # =============================================================================
 using OhMyThreads: @tasks
 
-# Set the data directory path
-data_dir = joinpath(project_path, "Data", "data20240123")
-
 # Get full paths to all *.nc files
 nc_files = filter(f -> endswith(f, ".nc") && isfile(f),
                   readdir(data_dir; join=true))
@@ -111,10 +111,14 @@ nc_files = filter(f -> endswith(f, ".nc") && isfile(f),
 # Extract site names (filename without extension)
 sites = first.(splitext.(basename.(nc_files)))
 
-#using Base.Threads
+q10s_no = Dict()
+ A = ()
+
+using Base.Threads
 using CairoMakie
-@tasks for site in ["FR-Pue", "FR-LBr", "US-SRG"] # sites[randperm(length(sites))[1:3]]
-    fluxnet_data = load_fluxnet_nc(joinpath(project_path, "Data", "data20240123", "$site.nc"), timevar="date")
+@tasks for site in [ "BR-CST" ,"MY-PSO" ,"GH-Ank","DE-Hai","US-HWB",  "CN-Cha" ] # sites[randperm(length(sites))[1:3]]
+    data_dir = "/ptmp/mp002/ellis/DataEasyHybrid/data20240123"
+    fluxnet_data = load_fluxnet_nc(joinpath(data_dir, "$site.nc"), timevar="date")
     df = fluxnet_data.timeseries
 
     # only good quality data: a record is a measured value (*_QC=0), or the quality level of the gap-filling that was used for that record (*_QC=1 better, *_QC=3 worse quality)
@@ -150,11 +154,35 @@ using CairoMakie
             shuffleobs = true,
             plotting = false,
             show_progress = false,
-            hybrid_name = "",
-            folder_to_save = "_$site"
+            hybrid_name = "Tropical sites",
+            folder_to_save = "_no_$site"
         )
     end
+    train_q10 = out_Generic.train_diffs.Q10
+    q10s_no[site] = train_q10
+    println("Q10 (parameter) = ", train_q10)
 end
+
+
+println(q10s_no)
+
+
+####
+# Extract keys (sites)
+sites_no = collect(keys(q10s))
+println(sites_no)  
+# Build the DataFrame
+df = DataFrame(
+    Site = sites_no,
+    Q10 = [q10s[s] for s in sites_no],
+    Q10_no = [q10s_no[s] for s in sites_no]
+)
+
+
+println(df)
+# Add difference column
+df.Q10_diff = df.Q10 .- df.Q10_no
+
 
 # read the trained weights and biases from disk
 site = "US-SRG"
@@ -164,6 +192,12 @@ all_groups = get_all_groups(output_file)
 psst, _ = load_group(output_file, :HybridModel_MultiNNHybridModel)
 
 ps_learned, st_learned = psst[end][1], psst[end][2]
+
+
+
+
+
+
 
 # forward model Run
 forward_run = hybrid_model(df, ps_learned, st_learned)
